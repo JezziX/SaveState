@@ -147,6 +147,7 @@ export default function App() {
           bookId: r.media_id,
           rating: r.rating,
           notes: r.review_text,
+          quotes: r.quotes || [],
           updatedAt: r.updated_at
         }));
         setReviews(newReviews);
@@ -159,11 +160,9 @@ export default function App() {
         }
         if (profileData.display_name) {
           setUserName(profileData.display_name);
-          localStorage.setItem('bt_user_name', profileData.display_name);
         }
         if (profileData.avatar_url) {
           setUserAvatar(profileData.avatar_url);
-          localStorage.setItem('bt_user_avatar', profileData.avatar_url);
         }
       }
     } catch (e) {
@@ -194,6 +193,7 @@ export default function App() {
         media_cover_url: bookCover,
         rating: review.rating,
         review_text: review.notes,
+        quotes: review.quotes || [],
         updated_at: new Date().toISOString()
       });
     } catch (e) {
@@ -219,40 +219,14 @@ export default function App() {
     }
   };
 
-  // State Initialization from LocalStorage or starters
-  const [books, setBooks] = useState<Book[]>(() => {
-    const saved = localStorage.getItem('bt_books');
-    return saved ? JSON.parse(saved) : POPULAR_STARTER_BOOKS;
-  });
-
-  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>(() => {
-    const saved = localStorage.getItem('bt_logs');
-    return saved ? JSON.parse(saved) : getOnboardingLogs();
-  });
-
-  const [reviews, setReviews] = useState<BookReview[]>(() => {
-    const saved = localStorage.getItem('bt_reviews');
-    return saved ? JSON.parse(saved) : DEFAULT_REVIEWS;
-  });
-
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>(() => {
-    const saved = localStorage.getItem('bt_media');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [mediaLogs, setMediaLogs] = useState<MediaLog[]>(() => {
-    const saved = localStorage.getItem('bt_media_logs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [mediaReviews, setMediaReviews] = useState<MediaReview[]>(() => {
-    const saved = localStorage.getItem('bt_media_reviews');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [savePoints, setSavePoints] = useState<SavePoint[]>(() => {
-    const saved = localStorage.getItem('bt_save_points');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // State Initialization
+  const [books, setBooks] = useState<Book[]>([]);
+  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([]);
+  const [reviews, setReviews] = useState<BookReview[]>([]);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [mediaLogs, setMediaLogs] = useState<MediaLog[]>([]);
+  const [mediaReviews, setMediaReviews] = useState<MediaReview[]>([]);
+  const [savePoints, setSavePoints] = useState<SavePoint[]>([]);
   const [recapData, setRecapData] = useState<{ isOpen: boolean; mediaTitle: string; mediaId: string; } | null>(null);
 
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
@@ -316,42 +290,17 @@ export default function App() {
   const [isAutosaving, setIsAutosaving] = useState<boolean>(false);
   const [autosaveStatus, setAutosaveStatus] = useState<string>('');
 
-  // User name state for custom greeting with space before SaveState
-  const [userName, setUserName] = useState<string>(() => {
-    return localStorage.getItem('bt_user_name') || '';
-  });
+  // User name state for custom greeting
+  const [userName, setUserName] = useState<string>('');
   
-  const [userAvatar, setUserAvatar] = useState<string>(() => {
-    const saved = localStorage.getItem('bt_user_avatar');
-    if (saved === '/logo.jpg') return '/icon-512.png';
-    return saved || '/icon-512.png';
-  });
+  const [userAvatar, setUserAvatar] = useState<string>('/icon-512.png');
 
   const [prefilledDate, setPrefilledDate] = useState<string>('');
   const [isEditingGoal, setIsEditingGoal] = useState<boolean>(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
-  // Sync state to localstorage when changes happen
-  useEffect(() => {
-    localStorage.setItem('bt_user_name', userName);
-  }, [userName]);
-  
-  useEffect(() => {
-    localStorage.setItem('bt_user_avatar', userAvatar);
-  }, [userAvatar]);
-
-  useEffect(() => {
-    localStorage.setItem('bt_books', JSON.stringify(books));
-  }, [books]);
-
-  useEffect(() => {
-    localStorage.setItem('bt_logs', JSON.stringify(readingLogs));
-  }, [readingLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('bt_reviews', JSON.stringify(reviews));
-  }, [reviews]);
-
+  // Sync state to localstorage when changes happen for non-critical prefs
   useEffect(() => {
     localStorage.setItem('bt_yearly_goal', String(yearlyGoal));
   }, [yearlyGoal]);
@@ -363,19 +312,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('bt_preferences', JSON.stringify(preferences));
   }, [preferences]);
-
-  useEffect(() => {
-    localStorage.setItem('bt_media', JSON.stringify(mediaItems));
-  }, [mediaItems]);
-
-  useEffect(() => {
-    localStorage.setItem('bt_media_logs', JSON.stringify(mediaLogs));
-  }, [mediaLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('bt_media_reviews', JSON.stringify(mediaReviews));
-    localStorage.setItem('bt_save_points', JSON.stringify(savePoints));
-  }, [mediaReviews]);
 
   // Immediate/Debounced autosave effect that triggers EACH time a change is made
   useEffect(() => {
@@ -750,7 +686,8 @@ export default function App() {
                     Home
                   </button>
                 )}
-                <div className="flex items-center gap-1.5 group/name pl-1 md:pl-0">
+                <div className="flex items-center gap-2 group/name pl-1 md:pl-0">
+                  <img src="/icon-512.png" alt="SaveState Logo" className="w-10 h-10 object-cover rounded-md" />
                   <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
                     {userName ? `${userName}'s ` : ''}SaveState
                   </h1>
@@ -758,21 +695,29 @@ export default function App() {
               </div>
             </div>
             
-            <button
-              onClick={() => setIsProfileDrawerOpen(true)}
-              className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto md:hidden shrink-0"
-              title="Profile Settings"
-            >
-              <img src={userAvatar} alt="Profile Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-            </button>
-            
-            <button
-              onClick={() => setIsProfileDrawerOpen(true)}
-              className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple hidden md:flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto"
-              title="Profile Settings"
-            >
-              <img src={userAvatar} alt="Profile Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-            </button>
+            <div className="relative ml-auto">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="w-11 h-11 rounded-full bg-brand-purple/10 border-2 border-brand-purple/40 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] relative overflow-hidden group shrink-0"
+                title="User Menu"
+              >
+                <img src={userAvatar || '/icon-512.png'} alt="Profile Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+              </button>
+              
+              {isUserMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-52 bg-app-card border border-brand-purple/30 rounded-xl shadow-2xl overflow-hidden z-50">
+                    <button onClick={() => { setViewingProfileId(session?.user?.id || 'u1'); setCurrentPage('profile'); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold flex items-center gap-3 hover:bg-brand-purple/10 text-white">
+                      <User size={16} className="text-brand-purple" /> My Profile
+                    </button>
+                    <button onClick={() => { setIsProfileDrawerOpen(true); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold flex items-center gap-3 hover:bg-brand-purple/10 text-white border-t border-app-border/50">
+                      <Settings size={16} className="text-[var(--color-text-muted)]" /> Settings & Account
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             
           </div>
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0 relative">

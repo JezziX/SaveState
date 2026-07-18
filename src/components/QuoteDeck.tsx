@@ -3,6 +3,8 @@ import { Book, BookReview } from '../types';
 import { ChevronLeft, ChevronRight, Shuffle, Sparkles, BookMarked, Quote as QuoteIcon, Trash2, Search, Plus, Pencil, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { supabase } from '../utils/supabaseClient';
+
 interface QuoteDeckProps {
   books: Book[];
   reviews: BookReview[];
@@ -29,11 +31,55 @@ interface QuoteItem {
 }
 
 export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
-  // Store standalone quotes locally so they are persistent, robust, and don't need changes to root AppState
-  const [standaloneQuotes, setStandaloneQuotes] = useState<StandaloneQuote[]>(() => {
-    const saved = localStorage.getItem('bt_standalone_quotes');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [standaloneQuotes, setStandaloneQuotes] = useState<StandaloneQuote[]>([]);
+
+  useEffect(() => {
+    loadStandaloneQuotes();
+  }, []);
+
+  const loadStandaloneQuotes = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from('standalone_quotes').select('*').eq('user_id', session.user.id);
+      if (data) {
+        setStandaloneQuotes(data.map(d => ({
+          id: d.id,
+          quote: d.quote,
+          author: d.author,
+          source: d.source,
+          createdAt: d.created_at
+        })));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const pushStandaloneQuote = async (sq: StandaloneQuote) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await supabase.from('standalone_quotes').upsert({
+        id: sq.id,
+        user_id: session.user.id,
+        quote: sq.quote,
+        author: sq.author,
+        source: sq.source,
+        created_at: sq.createdAt
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const deleteStandaloneQuote = async (id: string) => {
+    try {
+      await supabase.from('standalone_quotes').delete().eq('id', id);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
   const [quoteLayoutMode, setQuoteLayoutMode] = useState<'deck' | 'list'>('deck');
@@ -51,11 +97,6 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Sync standalone quotes to local storage
-  useEffect(() => {
-    localStorage.setItem('bt_standalone_quotes', JSON.stringify(standaloneQuotes));
-  }, [standaloneQuotes]);
 
   // Extract all quotes from both book reviews and standalone entry list
   const allQuotes = useMemo<QuoteItem[]>(() => {
@@ -186,6 +227,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
     };
 
     setStandaloneQuotes(prev => [newSq, ...prev]);
+    pushStandaloneQuote(newSq);
     setNewQuoteText('');
     setNewQuoteAuthor('');
     setNewQuoteSource('');
@@ -208,12 +250,14 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
     if (activeQuote.isStandalone) {
       setStandaloneQuotes(prev => prev.map(sq => {
         if (sq.id === activeQuote.id) {
-          return {
+          const updated = {
             ...sq,
             quote: editQuoteText.trim(),
             author: editQuoteAuthor.trim(),
             source: editQuoteSource.trim() || undefined
           };
+          pushStandaloneQuote(updated);
+          return updated;
         }
         return sq;
       }));
@@ -240,6 +284,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
 
     if (activeQuote.isStandalone) {
       setStandaloneQuotes(prev => prev.filter(sq => sq.id !== activeQuote.id));
+      deleteStandaloneQuote(activeQuote.id);
     } else if (activeQuote.bookId && activeQuote.quoteIndexInReview !== undefined && onSaveReview) {
       const reviewToUpdate = reviews.find(r => r.bookId === activeQuote.bookId);
       if (reviewToUpdate && reviewToUpdate.quotes) {
@@ -439,7 +484,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             {filteredQuotes.map((item, index) => (
               <div 
                 key={item.id}
-                className="bg-gradient-to-r from-[#141010] to-[#120d0d] border border-[#3c2a1e]/60 rounded-xl p-5 hover:border-brand-teal/30 transition-all flex flex-col justify-between relative shadow-lg group text-left min-h-[160px]"
+                className="bg-[#09090B] border border-brand-purple/30 rounded-xl p-5 hover:border-brand-purple/70 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all flex flex-col justify-between relative group text-left min-h-[160px]"
               >
                 {/* Vintage decorative header */}
                 <div className="flex justify-between items-center text-brand-teal/50 text-[8px] font-mono tracking-widest uppercase border-b border-app-border/20 pb-2 mb-3">
@@ -500,8 +545,8 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
           {/* STACKED DECK PRESENTATION */}
           <div className="relative w-full aspect-[16/10] sm:aspect-[16/9.5] max-w-[420px] min-h-[240px] select-none perspective-lg">
             {/* Layered botanical card shadow spreads */}
-            <div className="absolute inset-0 bg-[#0d0a08]/40 border border-app-border/15 rounded-2xl rotate-2 translate-y-2 translate-x-1" />
-            <div className="absolute inset-0 bg-[#0d0a08]/20 border border-app-border/10 rounded-2xl -rotate-2 -translate-y-1 -translate-x-1" />
+            <div className="absolute inset-0 bg-brand-purple/5 border border-brand-purple/20 rounded-2xl rotate-2 translate-y-2 translate-x-1 blur-[2px]" />
+            <div className="absolute inset-0 bg-brand-turquoise/5 border border-brand-turquoise/20 rounded-2xl -rotate-2 -translate-y-1 -translate-x-1 blur-[2px]" />
 
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
@@ -511,7 +556,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="absolute inset-0 bg-gradient-to-b from-[#141010] to-[#1a1414] border-2 border-[#3c2a1e] rounded-2xl shadow-3xl overflow-hidden flex flex-col justify-between p-6 sm:p-7 relative"
+                className="absolute inset-0 bg-[#09090B] border border-brand-purple/50 rounded-2xl shadow-[0_0_30px_rgba(168,85,247,0.2)] overflow-hidden flex flex-col justify-between p-6 sm:p-7 relative backdrop-blur-xl"
               >
                 {/* CARD TOOLBAR */}
                 <div className="flex justify-between items-center text-brand-purple/80 font-mono text-[7.5px] border-b border-app-border/20 pb-2 relative z-20">
@@ -588,11 +633,11 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                     <div className="flex-1 flex flex-col justify-between h-full relative z-10 text-center">
                       {/* Generous centered quote text style */}
                       <div className="flex-1 flex items-center justify-center text-center py-2 px-1">
-                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-teal/10 leading-none select-none absolute top-0">“</blockquote>
-                        <blockquote className="text-xs sm:text-[13px] md:text-[14.5px] font-medium font-serif leading-relaxed text-white italic select-all break-words max-h-[110px] overflow-y-auto pr-1">
+                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-purple/30 leading-none select-none absolute top-0">“</blockquote>
+                        <blockquote className="text-xs sm:text-[13px] md:text-[14.5px] font-medium font-serif leading-relaxed text-[#E2D8F0] italic select-all break-words max-h-[110px] overflow-y-auto pr-1 drop-shadow-[0_0_8px_rgba(226,216,240,0.3)]">
                           {activeQuote.quote}
                         </blockquote>
-                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-teal/10 leading-none select-none absolute bottom-5">”</blockquote>
+                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-purple/30 leading-none select-none absolute bottom-5">”</blockquote>
                       </div>
 
                       {/* Editorial Footnote attribution */}
