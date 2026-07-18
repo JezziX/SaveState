@@ -293,12 +293,12 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
   return (
     <div className="relative p-1">
       {/* Background radial highlight */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[75px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-teal/5 blur-[75px] rounded-full pointer-events-none" />
 
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-app-border/60 pb-5 mb-6">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 sm:p-2.5 bg-amber-500/10 border border-amber-500/25 text-amber-400 rounded-xl">
+          <div className="p-2 sm:p-2.5 bg-brand-teal/10 border border-brand-teal/25 text-brand-purple rounded-xl">
             <QuoteIcon size={15} />
           </div>
           <div>
@@ -314,7 +314,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             <button
               onClick={() => setQuoteLayoutMode('deck')}
               className={`px-2.5 py-1 rounded text-[8.5px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                quoteLayoutMode === 'deck' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black' : 'text-[var(--color-text-muted)] hover:text-white'
+                quoteLayoutMode === 'deck' ? 'bg-brand-teal/10 text-brand-purple border border-brand-teal/20 font-black' : 'text-[var(--color-text-muted)] hover:text-white'
               }`}
             >
               Deck
@@ -322,7 +322,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             <button
               onClick={() => setQuoteLayoutMode('list')}
               className={`px-2.5 py-1 rounded text-[8.5px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                quoteLayoutMode === 'list' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black' : 'text-[var(--color-text-muted)] hover:text-white'
+                quoteLayoutMode === 'list' ? 'bg-brand-teal/10 text-brand-purple border border-brand-teal/20 font-black' : 'text-[var(--color-text-muted)] hover:text-white'
               }`}
             >
               List
@@ -343,7 +343,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             <button
               onClick={handleShuffle}
               disabled={filteredQuotes.length <= 1}
-              className="p-1 px-2.5 py-1 bg-[#0f0e12] hover:bg-amber-500/10 text-amber-500 hover:text-amber-300 border border-amber-500/20 hover:border-amber-500/40 rounded-lg text-[10px] uppercase tracking-wider font-extrabold flex items-center gap-1 transition-all active:scale-95 disabled:opacity-40 cursor-pointer"
+              className="p-1 px-2.5 py-1 bg-[#0f0e12] hover:bg-brand-teal/10 text-brand-teal hover:text-brand-turquoise border border-brand-teal/20 hover:border-brand-teal/40 rounded-lg text-[10px] uppercase tracking-wider font-extrabold flex items-center gap-1 transition-all active:scale-95 disabled:opacity-40 cursor-pointer"
               title="Shuffle Quote Cards"
             >
               <Shuffle size={10} /> Shuffle
@@ -363,7 +363,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             setCurrentIndex(0);
           }}
           placeholder="Search quotes..."
-          className="w-full bg-[#0e0e11]/85 border border-[#1b1b22] hover:border-amber-900/35 text-amber-100 text-xs pl-8 pr-3 py-2 rounded-xl focus:outline-none focus:border-amber-900/60 transition-colors placeholder:text-gray-600"
+          className="w-full bg-[#0e0e11]/85 border border-[#1b1b22] hover:border-brand-purple/35 text-white text-xs pl-8 pr-3 py-2 rounded-xl focus:outline-none focus:border-brand-purple/60 transition-colors placeholder:text-gray-600"
         />
       </div>
 
@@ -374,9 +374,9 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="w-full max-w-xl bg-[#16120e] border border-amber-900/35 rounded-xl p-4 sm:p-5 mb-5 text-left mx-auto shadow-2xl overflow-hidden relative"
+            className="w-full max-w-xl bg-app-card border border-brand-purple/35 rounded-xl p-4 sm:p-5 mb-5 text-left mx-auto shadow-2xl overflow-hidden relative"
           >
-            <div className="text-[10px] font-mono uppercase font-black text-[#d4af37]/80 mb-2.5 tracking-widest flex items-center gap-1">
+            <div className="text-[10px] font-mono uppercase font-black text-brand-turquoise/80 mb-2.5 tracking-widest flex items-center gap-1">
               ✦ Transcribe Freeform Standalone Highlight
             </div>
             <div className="space-y-3">
@@ -386,7 +386,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                   value={newQuoteText}
                   onChange={(e) => setNewQuoteText(e.target.value)}
                   placeholder="Enter quote..."
-                  className="w-full h-20 bg-app-base border border-amber-950 text-amber-100 text-[11.5px] font-sans p-2.5 rounded focus:outline-none focus:border-amber-700/60 transition-colors uppercase-none font-serif placeholder:font-serif placeholder:text-amber-100/20"
+                  className="w-full h-20 bg-app-base border border-app-border text-white text-[11.5px] font-sans p-2.5 rounded focus:outline-none focus:border-brand-purple/60 transition-colors uppercase-none font-serif placeholder:font-serif placeholder:text-white/20"
                 />
               </div>
 
@@ -398,7 +398,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                     value={newQuoteAuthor}
                     onChange={(e) => setNewQuoteAuthor(e.target.value)}
                     placeholder="e.g. Oscar Wilde"
-                    className="w-full bg-app-base border border-amber-950 text-amber-100 text-xs px-2.5 py-2 rounded focus:outline-none focus:border-amber-700/60"
+                    className="w-full bg-app-base border border-app-border text-white text-xs px-2.5 py-2 rounded focus:outline-none focus:border-brand-purple/60"
                   />
                 </div>
                 <div>
@@ -408,7 +408,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                     value={newQuoteSource}
                     onChange={(e) => setNewQuoteSource(e.target.value)}
                     placeholder="e.g. De Profundis"
-                    className="w-full bg-app-base border border-amber-950 text-amber-100 text-xs px-2.5 py-2 rounded focus:outline-none focus:border-amber-700/60"
+                    className="w-full bg-app-base border border-app-border text-white text-xs px-2.5 py-2 rounded focus:outline-none focus:border-brand-purple/60"
                   />
                 </div>
               </div>
@@ -439,10 +439,10 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             {filteredQuotes.map((item, index) => (
               <div 
                 key={item.id}
-                className="bg-gradient-to-r from-[#141010] to-[#120d0d] border border-[#3c2a1e]/60 rounded-xl p-5 hover:border-amber-500/30 transition-all flex flex-col justify-between relative shadow-lg group text-left min-h-[160px]"
+                className="bg-gradient-to-r from-[#141010] to-[#120d0d] border border-[#3c2a1e]/60 rounded-xl p-5 hover:border-brand-teal/30 transition-all flex flex-col justify-between relative shadow-lg group text-left min-h-[160px]"
               >
                 {/* Vintage decorative header */}
-                <div className="flex justify-between items-center text-amber-500/50 text-[8px] font-mono tracking-widest uppercase border-b border-amber-950/20 pb-2 mb-3">
+                <div className="flex justify-between items-center text-brand-teal/50 text-[8px] font-mono tracking-widest uppercase border-b border-app-border/20 pb-2 mb-3">
                   <span>✦ {item.isStandalone ? 'Standalone Caption' : 'Memoir Highlight'}</span>
                   <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
@@ -456,7 +456,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                           setIsEditingCard(true);
                         }, 50);
                       }}
-                      className="p-1 text-amber-300/60 hover:text-amber-300 hover:bg-amber-500/10 rounded transition-colors cursor-pointer"
+                      className="p-1 text-brand-turquoise/60 hover:text-brand-turquoise hover:bg-brand-teal/10 rounded transition-colors cursor-pointer"
                       title="Edit Highlight"
                     >
                       <Pencil size={11} />
@@ -476,13 +476,13 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                 </div>
 
                 {/* Body Quote */}
-                <p className="text-[11.5px] sm:text-[12.5px] font-serif leading-relaxed text-amber-100 italic flex-1">
+                <p className="text-[11.5px] sm:text-[12.5px] font-serif leading-relaxed text-white italic flex-1">
                   “{item.quote}”
                 </p>
 
                 {/* Footer Speaker Details */}
-                <div className="mt-3 pt-2.5 border-t border-amber-950/20 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[10px] font-serif font-black uppercase tracking-wider text-[#d4af37]">
+                <div className="mt-3 pt-2.5 border-t border-app-border/20 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[10px] font-serif font-black uppercase tracking-wider text-brand-turquoise">
                     — {item.bookAuthor}
                   </span>
                   {item.bookTitle && (
@@ -500,8 +500,8 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
           {/* STACKED DECK PRESENTATION */}
           <div className="relative w-full aspect-[16/10] sm:aspect-[16/9.5] max-w-[420px] min-h-[240px] select-none perspective-lg">
             {/* Layered botanical card shadow spreads */}
-            <div className="absolute inset-0 bg-[#0d0a08]/40 border border-amber-950/15 rounded-2xl rotate-2 translate-y-2 translate-x-1" />
-            <div className="absolute inset-0 bg-[#0d0a08]/20 border border-amber-950/10 rounded-2xl -rotate-2 -translate-y-1 -translate-x-1" />
+            <div className="absolute inset-0 bg-[#0d0a08]/40 border border-app-border/15 rounded-2xl rotate-2 translate-y-2 translate-x-1" />
+            <div className="absolute inset-0 bg-[#0d0a08]/20 border border-app-border/10 rounded-2xl -rotate-2 -translate-y-1 -translate-x-1" />
 
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
@@ -514,15 +514,15 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                 className="absolute inset-0 bg-gradient-to-b from-[#141010] to-[#1a1414] border-2 border-[#3c2a1e] rounded-2xl shadow-3xl overflow-hidden flex flex-col justify-between p-6 sm:p-7 relative"
               >
                 {/* CARD TOOLBAR */}
-                <div className="flex justify-between items-center text-amber-900/80 font-mono text-[7.5px] border-b border-amber-950/20 pb-2 relative z-20">
-                  <span className="flex items-center gap-1 text-[#d4af37]/75 font-black uppercase tracking-widest font-mono">
+                <div className="flex justify-between items-center text-brand-purple/80 font-mono text-[7.5px] border-b border-app-border/20 pb-2 relative z-20">
+                  <span className="flex items-center gap-1 text-brand-turquoise/75 font-black uppercase tracking-widest font-mono">
                     ✦ {activeQuote.isStandalone ? 'Standalone Caption' : 'Memoir Highlight'}
                   </span>
                   
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleBeginEdit}
-                      className="p-1 -my-1 text-amber-300/60 hover:text-amber-300 hover:bg-amber-500/10 rounded transition-colors cursor-pointer"
+                      className="p-1 -my-1 text-brand-turquoise/60 hover:text-brand-turquoise hover:bg-brand-teal/10 rounded transition-colors cursor-pointer"
                       title="Edit Quote Text / Clues"
                     >
                       <Pencil size={11} />
@@ -541,7 +541,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                 <div className="flex-1 flex flex-col justify-between py-4 relative">
                   {/* Subtle watermarked quote icon at center bg */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none select-none">
-                    <QuoteIcon size={95} className="text-amber-500" />
+                    <QuoteIcon size={95} className="text-brand-teal" />
                   </div>
 
                   {isEditingCard ? (
@@ -550,7 +550,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                       <textarea
                         value={editQuoteText}
                         onChange={(e) => setEditQuoteText(e.target.value)}
-                        className="w-full h-20 bg-app-base border border-amber-950 text-amber-100 text-[11px] font-sans p-1.5 rounded focus:outline-none"
+                        className="w-full h-20 bg-app-base border border-app-border text-white text-[11px] font-sans p-1.5 rounded focus:outline-none"
                       />
                       <div className="grid grid-cols-2 gap-2 mt-1">
                         <input
@@ -558,14 +558,14 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                           value={editQuoteAuthor}
                           onChange={(e) => setEditQuoteAuthor(e.target.value)}
                           placeholder="Author"
-                          className="bg-app-base border border-amber-950 text-amber-100 text-[10px] px-2 py-1 rounded"
+                          className="bg-app-base border border-app-border text-white text-[10px] px-2 py-1 rounded"
                         />
                         <input
                           type="text"
                           value={editQuoteSource}
                           onChange={(e) => setEditQuoteSource(e.target.value)}
                           placeholder="Clue Source (Optional)"
-                          className="bg-app-base border border-amber-950 text-amber-100 text-[10px] px-2 py-1 rounded"
+                          className="bg-app-base border border-app-border text-white text-[10px] px-2 py-1 rounded"
                         />
                       </div>
                       <div className="flex justify-end gap-1.5 mt-2">
@@ -577,7 +577,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                         </button>
                         <button
                           onClick={handleSaveEdit}
-                          className="p-1 px-2.5 bg-amber-600 hover:bg-amber-500 text-white text-[9px] rounded font-black uppercase tracking-wider cursor-pointer"
+                          className="p-1 px-2.5 bg-brand-purple hover:bg-brand-teal text-white text-[9px] rounded font-black uppercase tracking-wider cursor-pointer"
                         >
                           Save
                         </button>
@@ -588,16 +588,16 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                     <div className="flex-1 flex flex-col justify-between h-full relative z-10 text-center">
                       {/* Generous centered quote text style */}
                       <div className="flex-1 flex items-center justify-center text-center py-2 px-1">
-                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-amber-500/10 leading-none select-none absolute top-0">“</blockquote>
-                        <blockquote className="text-xs sm:text-[13px] md:text-[14.5px] font-medium font-serif leading-relaxed text-amber-100 italic select-all break-words max-h-[110px] overflow-y-auto pr-1">
+                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-teal/10 leading-none select-none absolute top-0">“</blockquote>
+                        <blockquote className="text-xs sm:text-[13px] md:text-[14.5px] font-medium font-serif leading-relaxed text-white italic select-all break-words max-h-[110px] overflow-y-auto pr-1">
                           {activeQuote.quote}
                         </blockquote>
-                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-amber-500/10 leading-none select-none absolute bottom-5">”</blockquote>
+                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-teal/10 leading-none select-none absolute bottom-5">”</blockquote>
                       </div>
 
                       {/* Editorial Footnote attribution */}
-                      <div className="mt-auto border-t border-amber-950/30 pt-3.5">
-                        <span className="block text-[10px] sm:text-[11px] font-serif font-black uppercase tracking-widest text-[#d4af37] select-none">
+                      <div className="mt-auto border-t border-app-border/30 pt-3.5">
+                        <span className="block text-[10px] sm:text-[11px] font-serif font-black uppercase tracking-widest text-brand-turquoise select-none">
                           — {activeQuote.bookAuthor}
                         </span>
                         {activeQuote.bookTitle && (
@@ -619,19 +619,19 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-[#0b0806]/98 z-50 rounded-2xl flex flex-col items-center justify-center p-5 text-center border border-red-900/30 backdrop-blur-xs shadow-2xl"
+                  className="absolute inset-0 bg-app-base/98 z-50 rounded-2xl flex flex-col items-center justify-center p-5 text-center border border-red-900/30 backdrop-blur-xs shadow-2xl"
                 >
                   <div className="p-2 bg-red-600/15 rounded-full text-red-500 mb-2.5 animate-pulse">
                     <Trash2 size={16} />
                   </div>
-                  <h4 className="text-[10px] font-black text-amber-100 uppercase tracking-widest font-mono mb-1">Evaporate Memoir Card?</h4>
+                  <h4 className="text-[10px] font-black text-white uppercase tracking-widest font-mono mb-1">Evaporate Memoir Card?</h4>
                   <p className="text-[9.5px] text-[var(--color-text-muted)] leading-relaxed max-w-[280px] mb-4 font-sans">
                     Are you absolutely sure you want to completely erase this saved highlight snippet? This action is permanent.
                   </p>
                   <div className="flex items-center gap-2 w-full max-w-[240px]">
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="flex-1 py-1 bg-[#1a1410] hover:bg-[#251e19] text-[9px] font-bold text-[var(--color-text-muted)] hover:text-white rounded border border-amber-950/30 transition-colors cursor-pointer uppercase"
+                      className="flex-1 py-1 bg-black/40 hover:bg-black/60 text-[9px] font-bold text-[var(--color-text-muted)] hover:text-white rounded border border-app-border/30 transition-colors cursor-pointer uppercase"
                     >
                       Keep
                     </button>
@@ -652,20 +652,20 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             <button
               onClick={handlePrev}
               disabled={filteredQuotes.length <= 1}
-              className="p-1 px-2 text-amber-400 hover:text-white bg-[#100d08] hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none active:scale-95 cursor-pointer"
+              className="p-1 px-2 text-brand-purple hover:text-white bg-app-card hover:bg-brand-teal/10 border border-brand-teal/20 hover:border-brand-teal/40 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none active:scale-95 cursor-pointer"
               title="Previous Memoir"
             >
               <ChevronLeft size={16} />
             </button>
 
-            <span className="text-[9px] font-mono text-amber-500/60 font-extrabold tracking-widest uppercase">
+            <span className="text-[9px] font-mono text-brand-teal/60 font-extrabold tracking-widest uppercase">
               CARD {currentIndex + 1} OF {filteredQuotes.length}
             </span>
 
             <button
               onClick={handleNext}
               disabled={filteredQuotes.length <= 1}
-              className="p-1 px-2 text-amber-400 hover:text-white bg-[#100d08] hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none active:scale-95 cursor-pointer"
+              className="p-1 px-2 text-brand-purple hover:text-white bg-app-card hover:bg-brand-teal/10 border border-brand-teal/20 hover:border-brand-teal/40 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none active:scale-95 cursor-pointer"
               title="Next Memoir"
             >
               <ChevronRight size={16} />
@@ -673,9 +673,9 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
           </div>
         </div>
       ) : (
-        <div className="text-center py-10 bg-[#16120e] rounded-xl border border-dashed border-amber-500/20 flex flex-col items-center max-w-xl mx-auto">
-          <BookMarked size={28} className="text-amber-500/40 mb-2" />
-          <span className="text-[11px] text-amber-100 font-bold uppercase font-display">No Highlights Exist</span>
+        <div className="text-center py-10 bg-app-card rounded-xl border border-dashed border-brand-teal/20 flex flex-col items-center max-w-xl mx-auto">
+          <BookMarked size={28} className="text-brand-teal/40 mb-2" />
+          <span className="text-[11px] text-white font-bold uppercase font-display">No Highlights Exist</span>
           
         </div>
       )}

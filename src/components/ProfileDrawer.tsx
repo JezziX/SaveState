@@ -33,7 +33,7 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single();
@@ -61,7 +61,6 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
     try {
       const updates = {
         id: session.user.id,
-        email: session.user.email,
         display_name: displayName,
         bio: bio,
         avatar_url: avatarUrl,
@@ -70,7 +69,7 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
       };
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .upsert(updates);
 
       if (error) throw error;

@@ -91,31 +91,68 @@ export default function App() {
         });
       }).subscribe();
 
+    const reviewsSub = supabase.channel('reviews_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'public_reviews' }, () => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) fetchCloudData(session.user.id);
+        });
+      }).subscribe();
+
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(mediaSub);
       supabase.removeChannel(savePointsSub);
+      supabase.removeChannel(reviewsSub);
     };
   }, []);
 
   const fetchCloudData = async (userId: string) => {
     try {
-      const [mediaRes, spRes] = await Promise.all([
+      const [mediaRes, spRes, revRes] = await Promise.all([
         supabase.from('media_items').select('*').eq('user_id', userId),
-        supabase.from('save_points').select('*').eq('user_id', userId)
+        supabase.from('save_points').select('*').eq('user_id', userId),
+        supabase.from('public_reviews').select('*').eq('user_id', userId)
       ]);
       
       if (mediaRes.data) {
         const cloudBooks = mediaRes.data.filter((m: any) => m.type === 'book');
         const cloudMedia = mediaRes.data.filter((m: any) => m.type !== 'book');
-        if (cloudBooks.length > 0) setBooks(cloudBooks as any);
-        if (cloudMedia.length > 0) setMediaItems(cloudMedia as any);
+        if (cloudBooks.length > 0) {
+          setBooks(cloudBooks as any);
+          const newLogs: ReadingLog[] = [];
+          cloudBooks.forEach((b: any) => {
+            const status = b.didNotFinish ? 'dnf' : (b.endDate ? 'completed' : (b.startDate ? 'active' : 'backlog'));
+            if (status === 'active' || status === 'completed' || status === 'dnf') {
+              newLogs.push({
+                id: `log_${b.id}`,
+                bookId: b.id,
+                startDate: b.startDate,
+                endDate: b.endDate || '',
+                status
+              });
+            }
+          });
+          setReadingLogs(newLogs);
+        }
+        if (cloudMedia.length > 0) {
+          setMediaItems(cloudMedia as any);
+          // could do similar for mediaLogs here
+        }
       }
       if (spRes.data && spRes.data.length > 0) {
         setSavePoints(spRes.data as any);
       }
+      if (revRes.data && revRes.data.length > 0) {
+        const newReviews = revRes.data.map((r: any) => ({
+          bookId: r.media_id,
+          rating: r.rating,
+          notes: r.review_text,
+          updatedAt: r.updated_at
+        }));
+        setReviews(newReviews);
+      }
       
-      const { data: profileData } = await supabase.from('user_profiles').select('*').eq('id', userId).single();
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
       if (profileData) {
         if (profileData.yearly_goal) {
           setYearlyGoal(profileData.yearly_goal);
@@ -145,6 +182,25 @@ export default function App() {
     }
   };
 
+  
+  const pushReview = async (review: BookReview, bookTitle: string, bookCover: string) => {
+    if (!session) return;
+    try {
+      await supabase.from('public_reviews').upsert({
+        id: session.user.id + '_' + review.bookId,
+        user_id: session.user.id,
+        media_id: review.bookId,
+        media_title: bookTitle,
+        media_cover_url: bookCover,
+        rating: review.rating,
+        review_text: review.notes,
+        updated_at: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const pushSavePoint = async (sp: any) => {
     if (!session) return;
     try {
@@ -157,7 +213,7 @@ export default function App() {
   const pushGoal = async (goal: number) => {
     if (!session) return;
     try {
-      await supabase.from('user_profiles').upsert({ id: session.user.id, yearly_goal: goal });
+      await supabase.from('profiles').upsert({ id: session.user.id, yearly_goal: goal });
     } catch (e) {
       console.error(e);
     }
@@ -458,6 +514,10 @@ export default function App() {
       }
       return [...prev, updatedReview];
     });
+    const book = books.find(b => b.id === updatedReview.bookId);
+    if (book) {
+      pushReview(updatedReview, book.title, book.coverUrl);
+    }
   };
 
   const handleUpdateMediaItem = (item: MediaItem) => {
@@ -508,6 +568,22 @@ export default function App() {
       id: `log_${Date.now()}`,
     };
     setReadingLogs(prev => [...prev, newLog]);
+    
+    // Update book to reflect in media_items for cross-device sync
+    setBooks(prev => {
+      const newBooks = [...prev];
+      const bookIdx = newBooks.findIndex(b => b.id === newLog.bookId);
+      if (bookIdx > -1) {
+        const book = { ...newBooks[bookIdx] };
+        book.startDate = newLog.startDate;
+        book.endDate = newLog.endDate;
+        book.didNotFinish = newLog.status === 'dnf';
+        newBooks[bookIdx] = book;
+        pushMediaItem(book, 'book');
+      }
+      return newBooks;
+    });
+
     if (newLog.status === 'completed') {
       const b = books.find(book => book.id === newLog.bookId);
       if (b) setCompletedBookForCelebration(b);
@@ -525,6 +601,22 @@ export default function App() {
       }
       return prev.map(log => log.id === updatedLog.id ? updatedLog : log);
     });
+    
+    // Update book to reflect in media_items for cross-device sync
+    setBooks(prev => {
+      const newBooks = [...prev];
+      const bookIdx = newBooks.findIndex(b => b.id === updatedLog.bookId);
+      if (bookIdx > -1) {
+        const book = { ...newBooks[bookIdx] };
+        book.startDate = updatedLog.startDate;
+        book.endDate = updatedLog.endDate;
+        book.didNotFinish = updatedLog.status === 'dnf';
+        newBooks[bookIdx] = book;
+        pushMediaItem(book, 'book');
+      }
+      return newBooks;
+    });
+
     if (updatedLog.status === 'completed') {
       const b = books.find(book => book.id === updatedLog.bookId);
       if (b) setCompletedBookForCelebration(b);
@@ -619,6 +711,9 @@ export default function App() {
                     <button onClick={() => { setCurrentPage('home'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'home' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <BookOpen size={14} /> Home
                     </button>
+                    <button onClick={() => { setViewingProfileId(session?.user?.id || 'u1'); setCurrentPage('profile'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'profile' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
+                      <User size={14} /> My Profile
+                    </button>
                     <button onClick={() => { setCurrentPage('community'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'community' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <Users size={14} /> Reviews
                     </button>
@@ -682,16 +777,6 @@ export default function App() {
           </div>
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0 relative">
             <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0">
-              {autosaveStatus && (
-                <span className="text-[9px] font-mono text-teal-400 bg-teal-500/5 border border-teal-500/20 px-2.5 py-0.5 rounded flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-teal-400 animate-ping" />
-                  {autosaveStatus}
-                </span>
-              )}
-              <div className="text-[10px] font-mono text-[#CAB9D4]/90 bg-app-card border border-app-border px-3 py-1 rounded shadow-xs flex items-center gap-2">
-                <span className={`w-1.5 h-1.5 rounded-full ${isAutosaving ? 'bg-teal-400 animate-spin' : 'bg-brand-turquoise animate-pulse'}`} />
-                <span>Sync Engine active</span>
-              </div>
             </div>
           </div>
         </header>
@@ -955,7 +1040,16 @@ export default function App() {
                 onUpdateUserName={setUserName}
                 yearlyGoal={yearlyGoal}
                 onUpdateYearlyGoal={setYearlyGoal}
-              />
+                isAutosaving={isAutosaving}
+                autosaveStatus={autosaveStatus}
+              >
+                <SyncHub 
+                  onImportState={handleImportVault} 
+                  appState={{ books, readingLogs, reviews, savePoints }}
+                  currentUserName={userName}
+                  currentYearlyGoal={yearlyGoal}
+                />
+              </SettingsPanel>
             </div>
           )}
         </main>
@@ -1003,6 +1097,10 @@ export default function App() {
                   }
                   return [...prev, updatedReview];
                 });
+                const book = books.find(b => b.id === updatedReview.bookId);
+                if (book) {
+                  pushReview(updatedReview, book.title, book.coverUrl);
+                }
                 setCompletedBookForCelebration(null);
               }}
             />

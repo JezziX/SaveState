@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppPreferences } from '../types';
-import { Type, Palette, CalendarDays, Settings as SettingsIcon, Hexagon, Moon, Sun, Monitor } from 'lucide-react';
+import { Type, Palette, CalendarDays, Settings as SettingsIcon, Hexagon, Moon, Sun, Monitor, Cloud, RefreshCw, Download } from 'lucide-react';
 
 interface SettingsPanelProps {
   preferences: AppPreferences;
@@ -9,6 +9,10 @@ interface SettingsPanelProps {
   onUpdateUserName: (name: string) => void;
   yearlyGoal: number;
   onUpdateYearlyGoal: (goal: number) => void;
+  isAutosaving?: boolean;
+  autosaveStatus?: string;
+  onNavigateToSync?: () => void;
+  children?: React.ReactNode;
 }
 
 export function SettingsPanel({
@@ -17,7 +21,11 @@ export function SettingsPanel({
   userName,
   onUpdateUserName,
   yearlyGoal,
-  onUpdateYearlyGoal
+  onUpdateYearlyGoal,
+  isAutosaving,
+  autosaveStatus,
+  onNavigateToSync,
+  children
 }: SettingsPanelProps) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -165,6 +173,31 @@ export function SettingsPanel({
                 <option value="true" className="bg-app-base text-[var(--color-text-main)]">Show Daily Goal</option>
                 <option value="false" className="bg-app-base text-[var(--color-text-main)]">Hide Daily Goal</option>
               </select>
+            </div>
+          </div>
+        </section>
+        {/* Data & Sync */}
+        <section className="bg-app-card border border-app-border rounded-xl p-5 shadow-app-glow">
+          <h3 className="text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider flex items-center gap-2 mb-4 border-b border-app-border pb-3">
+            <Cloud className="text-brand-purple" size={14} /> Data & Sync
+          </h3>
+          
+          <div className="space-y-6">
+            <div className="bg-black/20 border border-app-border rounded-lg p-4 flex items-center justify-between">
+              <div>
+                <h4 className="text-[11px] font-bold text-white uppercase tracking-widest flex items-center gap-2 mb-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isAutosaving ? 'bg-teal-400 animate-spin' : 'bg-brand-turquoise animate-pulse'}`} />
+                  Sync Engine Active
+                </h4>
+                <p className="text-[10px] text-[var(--color-text-muted)] font-mono">
+                  {autosaveStatus || 'Waiting to sync...'}
+                </p>
+              </div>
+              {isAutosaving && <RefreshCw size={16} className="text-teal-400 animate-pulse" />}
+            </div>
+
+            <div className="mt-4 border-t border-app-border pt-4">
+              {children}
             </div>
           </div>
         </section>
