@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Book, ReadingLog, BookReview, SavePoint } from '../types';
 import { Save } from 'lucide-react';
-import { Star, Bookmark, X, CheckCircle2, BookOpen, Trash2, Search, SlidersHorizontal, Grid, Columns, List, ArrowUpDown, Quote, Check } from 'lucide-react';
+import { Star, Bookmark, ChevronDown, X, CheckCircle2, BookOpen, Trash2, Search, SlidersHorizontal, Grid, Columns, List, ArrowUpDown, Quote, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 
 // Unified helper to fallback to styled Unsplash covers in case Open Library or other URLs fail
@@ -15,6 +15,7 @@ interface MyLibraryProps {
   shelfSkin?: string;
   pinnedBadges?: { id: string, x: number, y: number, badgeId: string, shelfIdx: number }[];
   unlockedBadges?: string[];
+  onUpdateShelfSkin?: (skin: string) => void;
   onUpdatePinnedBadges?: (badges: { id: string, x: number, y: number, badgeId: string, shelfIdx: number }[]) => void;
   books: Book[];
   readingLogs: ReadingLog[];
@@ -40,6 +41,7 @@ export function MyLibrary({
   shelfSkin = 'Apothecary',
   pinnedBadges = [],
   unlockedBadges = [],
+  onUpdateShelfSkin,
   onUpdatePinnedBadges,
   books,
   readingLogs,
@@ -789,6 +791,24 @@ const getDecorForSlot = (shelfIdx: number, salt: number) => {
               <List size={12} /> List
             </button>
           </div>
+
+          {/* Skin Selector (Only visible in Shelf mode) */}
+          {layoutMode === 'shelf' && onUpdateShelfSkin && (
+            <div className="relative group w-full sm:w-auto">
+              <select 
+                value={shelfSkin} 
+                onChange={e => onUpdateShelfSkin(e.target.value)}
+                className="appearance-none bg-app-base border border-app-border text-[var(--color-text-main)] text-xs font-bold uppercase tracking-wider py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer hover:border-brand-purple transition-colors w-full sm:w-auto h-[30px]"
+              >
+                <option value="Plain">Plain Skin</option>
+                <option value="Apothecary">Apothecary Skin</option>
+                <option value="Trophy Case">Trophy Case</option>
+                <option value="Kitchen">Kitchen Skin</option>
+                <option value="Spooky">Spooky Skin</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+            </div>
+          )}
 
           {/* Local Search Input */}
           <div className="relative w-full sm:w-56">

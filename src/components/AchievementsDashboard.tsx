@@ -87,7 +87,7 @@ export function AchievementsDashboard({ books, readingLogs, reviews }: Achieveme
         </div>
         <div>
           <h2 className="text-xl font-bold text-[var(--color-text-main)] font-display uppercase tracking-widest">
-            Save Points
+            Achievements
           </h2>
         </div>
       </div>

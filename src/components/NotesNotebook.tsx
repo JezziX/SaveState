@@ -130,7 +130,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
             <BookOpen size={16} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-gray-100 font-display">Notes</h2>
+            <h2 className="text-sm font-semibold text-gray-100 font-display">Save Points</h2>
             <p className="text-[11px] text-[var(--color-text-muted)]">Navigate and edit detailed memoirs and reading thoughts</p>
           </div>
         </div>
@@ -206,7 +206,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Find notes..."
+                    placeholder="Find save points..."
                     className={`w-full border rounded-md pl-7 pr-3 py-1 text-[11px] font-medium transition-colors ${
                       isDark 
                         ? 'bg-[#232327] border-[#303036] text-[#c1b5df] placeholder-[#7d7a8c]/65 focus:outline-[#9d89cc]/60' 
@@ -292,7 +292,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                         {hasNote && (
                           <span className={`w-1.5 h-1.5 rounded-full shadow-xs ${
                             isDark ? 'bg-[#9d89cc]' : 'bg-indigo-700/60 shadow-[0_0_4px_rgba(79,70,229,0.3)]'
-                          }`} title="Has Notes" />
+                          }`} title="Has Save Points" />
                         )}
                         <ChevronRight size={10} className={isDark ? 'text-[#7e7696]/40' : 'text-amber-800/40'} />
                       </div>
@@ -419,7 +419,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                   <textarea
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Enter notes..."
+                    placeholder="Enter save points..."
                     className={`w-full h-full min-h-[140px] bg-transparent border-none outline-none leading-6 text-[15px] pl-6 pr-2 py-1 placeholder-amber-800/35 focus:ring-0 custom-scrollbar resize-none md:text-[17px] transition-colors ${
                       isDark 
                         ? 'text-[#c3b6e0] placeholder-[#7d7a8c]/40' 
@@ -600,7 +600,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                     }`}
                   >
                     <Save size={12} />
-                    {successSaved ? 'Notes Saved!' : 'Save Page Note'}
+                    {successSaved ? 'Saved!' : 'Save Page Note'}
                   </button>
                 </div>
               </motion.div>

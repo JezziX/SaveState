@@ -263,7 +263,9 @@ export default function App() {
   });
   
   const [userAvatar, setUserAvatar] = useState<string>(() => {
-    return localStorage.getItem('bt_user_avatar') || '/icon-512.png';
+    const saved = localStorage.getItem('bt_user_avatar');
+    if (saved === '/logo.jpg') return '/icon-512.png';
+    return saved || '/icon-512.png';
   });
 
   const [prefilledDate, setPrefilledDate] = useState<string>('');
@@ -615,13 +617,13 @@ export default function App() {
                     </button>
 
                     <button onClick={() => { setCurrentPage('notebook'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'notebook' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <Pencil size={14} /> Notes
+                      <Pencil size={14} /> Save Points
                     </button>
                     <button onClick={() => { setCurrentPage('quotes'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'quotes' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <Quote size={14} /> Quotes
                     </button>
                     <button onClick={() => { setCurrentPage('achievements'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'achievements' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <Trophy size={14} /> Save Points
+                      <Trophy size={14} /> Achievements
                     </button>
 
                     <button onClick={() => { setCurrentPage('settings'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'settings' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
@@ -669,7 +671,7 @@ export default function App() {
             
           </div>
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0 relative">
-            <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-col items-end gap-1 mt-3 sm:mt-0">
               {autosaveStatus && (
                 <span className="text-[9px] font-mono text-teal-400 bg-teal-500/5 border border-teal-500/20 px-2.5 py-0.5 rounded flex items-center gap-1.5">
                   <span className="w-1 h-1 rounded-full bg-teal-400 animate-ping" />
@@ -681,85 +683,69 @@ export default function App() {
                 <span>Sync Engine active</span>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="relative group">
-                <select 
-                  value={preferences.shelfSkin || 'Apothecary'} 
-                  onChange={e => handleUpdatePreferences({ shelfSkin: e.target.value })}
-                  className="appearance-none bg-[#111] border border-[#333] text-[var(--color-text-main)] text-xs font-bold uppercase tracking-wider py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer hover:border-brand-purple transition-colors"
-                >
-                  <option value="Plain">Plain Skin</option>
-                  <option value="Apothecary">Apothecary Skin</option>
-                  <option value="Trophy Case">Trophy Case</option>
-                  <option value="Kitchen">Kitchen Skin</option>
-                  <option value="Spooky">Spooky Skin</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-              </div>
-            </div>
           </div>
         </header>
 
         {/* Page Content Rendering */}
         <main className="min-h-[500px]">
           {currentPage === 'home' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* GOAL SECTION */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              
+              {/* TOP ROW: Goal Section */}
               {preferences.showDailyGoal && (
                 <section className="bg-app-card border border-app-border rounded-xl p-5 shadow-app-glow relative overflow-hidden transition-all duration-300">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-brand-turquoise/[0.02] blur-[40px] rounded-full pointer-events-none" />
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3 select-none group flex-1 min-w-0">
-                    <div className="p-2 bg-brand-purple/10 border border-brand-purple/20 text-[#CAB9D4] rounded-lg group-hover:scale-105 transition-transform shrink-0">
-                      <Trophy size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-xs font-bold text-[var(--color-text-main)] group-hover:text-[var(--color-text-main)] transition-colors uppercase tracking-wider font-display flex items-center gap-1.5">
-                        {currentYear} Goal
-                      </h3>
-                    </div>
-                  </div>
                   
-                  <div className="shrink-0">
-                    {!isEditingGoal ? (
-                      <div className="flex items-center gap-2 bg-black/20 border border-app-border rounded-lg px-3 py-1.5 self-start sm:self-auto">
-                        <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Goal: <span className="text-brand-purple font-mono font-bold">{yearlyGoal} Books</span></span>
-                        <button
-                          onClick={() => setIsEditingGoal(true)}
-                          className="p-1 text-[var(--color-text-muted)] hover:text-brand-purple transition-colors rounded hover:bg-black/30 cursor-pointer"
-                        >
-                          <Pencil size={11} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 bg-black/40 border border-brand-purple/40 rounded-lg px-3 py-1.5 self-start sm:self-auto shadow-md">
-                        <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Set Goal:</span>
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setYearlyGoal(prev => { const n = Math.max(1, prev - 1); pushGoal(n); return n; })} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] hover:text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Minus size={10} /></button>
-                          <input type="number" min="1" value={yearlyGoal || ''} onChange={(e) => { const val = parseInt(e.target.value, 10); const n = isNaN(val) ? 0 : Math.max(0, val); setYearlyGoal(n); pushGoal(n); }} onBlur={() => { if (!yearlyGoal || yearlyGoal < 1) { setYearlyGoal(1); pushGoal(1); } }} className="w-12 bg-black/50 border border-app-border rounded-md py-0.5 text-xs font-black text-brand-purple font-mono text-center focus:outline-hidden focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/40" />
-                          <button onClick={() => setYearlyGoal(prev => { const n = prev + 1; pushGoal(n); return n; })} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] hover:text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Plus size={10} /></button>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-brand-purple/10 border border-brand-purple/20 text-[#CAB9D4] rounded-lg">
+                            <Trophy size={16} />
+                          </div>
+                          <div>
+                            <h3 className="text-xs font-bold text-[var(--color-text-main)] uppercase tracking-wider font-display">
+                              {currentYear} Goal
+                            </h3>
+                            <p className="text-sm font-bold text-[var(--color-text-main)] font-display mt-0.5">
+                              <span className="text-brand-purple text-lg">{finishedBooksThisYearCount}</span> of <span className="text-[var(--color-text-muted)]">{yearlyGoal}</span> read
+                            </p>
+                          </div>
                         </div>
-                        <button onClick={() => setIsEditingGoal(false)} className="p-1 px-2.5 bg-brand-purple/10 border border-brand-purple/20 text-brand-purple hover:bg-brand-purple hover:text-[#340F04] text-[10px] font-bold rounded transition-all cursor-pointer flex items-center gap-0.5"><Check size={10} /> Done</button>
+                        <p className="text-xs font-black text-brand-turquoise font-mono tracking-wide">{percentage}% Complete</p>
                       </div>
-                    )}
-                  </div>
-                </div>
+                      <div className="w-full h-4 bg-black/40 border border-app-border rounded-full overflow-hidden relative shadow-[inset_1px_1.5px_4px_rgba(0,0,0,0.6)]">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className="h-full bg-gradient-to-r from-brand-purple via-brand-teal to-brand-turquoise rounded-full relative">
+                          <div className="absolute inset-x-0 top-0 h-[1.5px] bg-white/20" />
+                        </motion.div>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <div className="flex flex-col sm:flex-row items-baseline justify-between gap-1 mb-1">
-                    <p className="text-sm font-bold text-[var(--color-text-main)] font-display">
-                      Completed <span className="text-brand-purple">{finishedBooksThisYearCount}</span> of <span className="text-brand-purple">{yearlyGoal}</span> items read this year
-                    </p>
-                    <p className="text-xs font-black text-brand-turquoise font-mono tracking-wide">{percentage}% Complete</p>
+                    <div className="shrink-0 flex justify-end md:border-l md:border-app-border md:pl-6">
+                      {!isEditingGoal ? (
+                        <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-app-border/50">
+                          <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Target: <span className="text-brand-purple font-mono font-bold">{yearlyGoal}</span></span>
+                          <button
+                            onClick={() => setIsEditingGoal(true)}
+                            className="p-1 text-[var(--color-text-muted)] hover:text-brand-purple transition-colors rounded hover:bg-black/30 cursor-pointer"
+                          >
+                            <Pencil size={11} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2 bg-black/40 border border-brand-purple/40 rounded-lg p-2.5 shadow-md">
+                          <span className="text-[9px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-center">Set Target</span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setYearlyGoal(prev => { const n = Math.max(1, prev - 1); pushGoal(n); return n; })} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Minus size={10} /></button>
+                            <input type="number" min="1" value={yearlyGoal || ''} onChange={(e) => { const val = parseInt(e.target.value, 10); const n = isNaN(val) ? 0 : Math.max(0, val); setYearlyGoal(n); pushGoal(n); }} onBlur={() => { if (!yearlyGoal || yearlyGoal < 1) { setYearlyGoal(1); pushGoal(1); } }} className="w-12 bg-black/50 border border-app-border rounded-md py-1 text-xs font-black text-brand-purple font-mono text-center focus:outline-hidden focus:border-brand-purple" />
+                            <button onClick={() => setYearlyGoal(prev => { const n = prev + 1; pushGoal(n); return n; })} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Plus size={10} /></button>
+                          </div>
+                          <button onClick={() => setIsEditingGoal(false)} className="p-1 mt-1 bg-brand-purple/10 border border-brand-purple/20 text-brand-purple hover:bg-brand-purple hover:text-[#340F04] text-[9px] font-bold rounded cursor-pointer flex items-center justify-center gap-1"><Check size={10} /> Done</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="w-full h-3.5 bg-black/40 border border-app-border rounded-full overflow-hidden relative shadow-[inset_1px_1.5px_4px_rgba(0,0,0,0.6)]">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className="h-full bg-gradient-to-r from-brand-purple via-brand-teal to-brand-turquoise rounded-full relative">
-                      <div className="absolute inset-x-0 top-0 h-[1.5px] bg-white/20" />
-                    </motion.div>
-                  </div>
-                </div>
-              </section>
+                </section>
               )}
 
               {/* CALENDAR SECTION */}
@@ -824,6 +810,7 @@ export default function App() {
                 shelfSkin={preferences.shelfSkin || 'Apothecary'}
                 pinnedBadges={preferences.pinnedBadges || []}
                 unlockedBadges={preferences.unlockedBadges || []}
+                onUpdateShelfSkin={(skin) => handleUpdatePreferences({ shelfSkin: skin })}
                 onUpdatePinnedBadges={(badges) => handleUpdatePreferences({ pinnedBadges: badges })}
                 books={books}
                 readingLogs={readingLogs}

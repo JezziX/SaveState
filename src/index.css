@@ -10,8 +10,8 @@
     
     --color-brand-brown: #0a0a1c;
     --color-brand-purple: #d721f9; /* Pulse Lavender */
-    --color-brand-teal: #a00df6; /* Electric Cyan */
-    --color-brand-turquoise: #07a1f9;
+    --color-brand-teal: #00d6f6; /* Electric Cyan */
+    --color-brand-turquoise: #07a1f9; /* Blue Accent */
     --color-brand-magenta: #f90072; /* Magenta Ray */
     --color-brand-yellow: #ffe600; /* Yellow Glow */
     
@@ -61,20 +61,6 @@
   box-shadow: var(--shadow-app-glow) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-}
-
-.bg-app-card::before, [class*="bg-app-card"]::before {
-  content: "_ \\25A1  \\00D7";
-  position: absolute;
-  top: 6px;
-  right: 10px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 6px;
-  color: var(--color-brand-purple);
-  opacity: 0.6;
-  pointer-events: none;
-  z-index: 10;
 }
 
 h1, h2, h3, h4 {
