@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MediaItem, MediaLog, MediaReview } from '../types';
-import { X, Star, Calendar, Plus, Trash2, Edit3, Loader2, Sparkles, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Star, Calendar, Plus, Trash2, Edit3, Loader2, Sparkles, Check, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { supabase } from '../utils/supabaseClient';
 
 interface MediaDetailModalProps {
   item: MediaItem;
@@ -95,6 +96,30 @@ export function MediaDetailModal({
   };
 
   const itemLogs = mediaLogs.filter(log => log.mediaId === item.id);
+  const isCompleted = itemLogs.some(log => log.status === 'completed');
+
+  const handleSharePublicly = async () => {
+    if (!isCompleted) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { error } = await supabase.from('public_reviews').upsert({
+        user_id: session.user.id,
+        media_id: item.id,
+        media_type: item.type,
+        media_title: item.title,
+        media_cover_url: item.coverUrl || '',
+        rating: rating,
+        review_text: notes,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      setSuccessMsg('Review shared to the community!');
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } catch (err: any) {
+      console.error("Failed to share:", err);
+    }
+  };
 
   // Default Quick Add Log setup
   const [logStatus, setLogStatus] = useState<'backlog' | 'active' | 'completed' | 'dnf'>('completed');
@@ -296,7 +321,16 @@ export function MediaDetailModal({
                     placeholder="Write your thoughts..."
                     className="w-full h-32 bg-[#141417] border border-app-border rounded-lg p-3 text-sm text-[var(--color-text-main)] focus:outline-hidden resize-none"
                   />
-                  <div className="mt-2 flex justify-end">
+                  <div className="mt-2 flex justify-end gap-2">
+                    {isCompleted && (
+                      <button
+                        type="button"
+                        onClick={handleSharePublicly}
+                        className="px-4 py-1.5 bg-app-base border border-brand-purple/40 hover:bg-brand-purple/10 text-brand-purple font-bold text-xs rounded-md transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                      >
+                        <Share2 size={13} /> Share Publicly
+                      </button>
+                    )}
                     <button
                       onClick={handleSaveNotes}
                       className="px-4 py-1.5 bg-white text-black font-bold text-xs rounded-md hover:bg-gray-200 transition-colors cursor-pointer"

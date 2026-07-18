@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Book, ReadingLog, BookReview } from '../types';
-import { X, Star, Calendar, Plus, Trash2, AlertCircle, Link, Edit3, Search as SearchIcon, Loader2, Sparkles, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Star, Calendar, Plus, Trash2, AlertCircle, Link, Edit3, Search as SearchIcon, Loader2, Sparkles, Check, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { handleImageError } from './MyLibrary';
 import { searchOpenLibrary } from '../utils/openlibrary';
+import { supabase } from '../utils/supabaseClient';
 
 interface BookDetailModalProps {
   book: Book;
@@ -182,6 +183,7 @@ export function BookDetailModal({
 
   // Book specific reading logs
   const currentLogs = readingLogs.filter(log => log.bookId === book.id);
+  const isCompleted = currentLogs.some(log => log.status === 'completed');
 
   const handleSaveReview = () => {
     onSaveReview({
@@ -190,6 +192,29 @@ export function BookDetailModal({
       notes,
       updatedAt: new Date().toISOString(),
     });
+  };
+
+  const handleSharePublicly = async () => {
+    if (!isCompleted) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { error } = await supabase.from('public_reviews').upsert({
+        user_id: session.user.id,
+        media_id: book.id,
+        media_type: 'book',
+        media_title: book.title,
+        media_cover_url: book.coverUrl || '',
+        rating: rating,
+        review_text: notes,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      setSuccessMsg('Review shared to the community!');
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } catch (err: any) {
+      console.error("Failed to share:", err);
+    }
   };
 
   const handleAddLog = (e: React.FormEvent) => {
@@ -414,13 +439,24 @@ export function BookDetailModal({
                 <span className="text-[9px] text-[var(--color-text-muted)] font-bold">
                   Last saved: {review?.updatedAt ? new Date(review.updatedAt).toLocaleDateString() : 'Never'}
                 </span>
-                <button
-                  type="button"
-                  onClick={handleSaveReview}
-                  className="px-4 py-2 bg-brand-purple hover:bg-[#d8c7df] text-[#340F04] font-extrabold text-xs rounded-lg transition-colors cursor-pointer shadow-sm"
-                >
-                  Save Note
-                </button>
+                <div className="flex gap-2">
+                  {isCompleted && (
+                    <button
+                      type="button"
+                      onClick={handleSharePublicly}
+                      className="px-4 py-2 bg-app-base border border-brand-purple/40 hover:bg-brand-purple/10 text-brand-purple font-extrabold text-xs rounded-lg transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                    >
+                      <Share2 size={13} /> Share Review
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSaveReview}
+                    className="px-4 py-2 bg-brand-purple hover:bg-[#d8c7df] text-[#340F04] font-extrabold text-xs rounded-lg transition-colors cursor-pointer shadow-sm"
+                  >
+                    Save Note
+                  </button>
+                </div>
               </div>
             </div>
           )}

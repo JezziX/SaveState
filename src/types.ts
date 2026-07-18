@@ -91,8 +91,17 @@ export interface AppState {
   savePoints?: SavePoint[];
 }
 
-export interface SocialUser {
+export interface UserProfile {
   id: string;
+  email: string;
+  display_name: string;
+  bio: string;
+  avatar_url: string;
+  active_skin: string;
+  yearly_goal: number;
+}
+
+export interface SocialUser {
   displayName: string;
   avatarUrl: string;
   bio: string;

@@ -16,8 +16,9 @@ import { RecapModal } from './components/RecapModal';
 import { SavePoint } from './types';
 import { CommunityFeed } from "./components/CommunityFeed";
 import { UserProfile } from "./components/UserProfile";
+import { ProfileDrawer } from "./components/ProfileDrawer";
 import { Users } from "lucide-react";
-import { BookOpen, Calendar, Star, Plus, Minus, Trophy, Sparkles, ChevronDown, ChevronUp, Share2, Pencil, Check, BarChart2, BookMarked, Quote, ArrowUp, ArrowDown, Settings, Headphones, Film, Tv } from 'lucide-react';
+import { BookOpen, Calendar, Star, Plus, Minus, Trophy, Sparkles, ChevronDown, ChevronUp, Share2, Pencil, Check, BarChart2, BookMarked, Quote, ArrowUp, ArrowDown, Settings, Headphones, Film, Tv, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { supabase } from './utils/supabaseClient';
 import { Auth } from './components/Auth';
@@ -253,6 +254,7 @@ export default function App() {
 
   const [isEditingName, setIsEditingName] = useState<boolean>(() => !localStorage.getItem('bt_user_name'));
   const [isEditingGoal, setIsEditingGoal] = useState<boolean>(false);
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
 
   // Sync state to localstorage when changes happen
   useEffect(() => {
@@ -651,7 +653,6 @@ export default function App() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0 relative">
-
             <div className="flex flex-col items-end gap-1">
               {autosaveStatus && (
                 <span className="text-[9px] font-mono text-teal-400 bg-teal-500/5 border border-teal-500/20 px-2.5 py-0.5 rounded flex items-center gap-1.5">
@@ -664,7 +665,16 @@ export default function App() {
                 <span>Sync Engine active</span>
               </div>
             </div>
-          <div className="flex items-center gap-3">
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsProfileDrawerOpen(true)}
+                className="w-8 h-8 rounded-full bg-brand-purple/20 border border-brand-purple/40 text-brand-purple flex items-center justify-center hover:bg-brand-purple hover:text-[#340F04] transition-colors cursor-pointer"
+                title="Account Settings"
+              >
+                <User size={16} />
+              </button>
+
               <div className="relative group">
                 <select 
                   value={preferences.shelfSkin || 'Apothecary'} 
@@ -976,6 +986,13 @@ export default function App() {
             />
           )}
         </AnimatePresence>
+        
+        <ProfileDrawer
+          isOpen={isProfileDrawerOpen}
+          onClose={() => setIsProfileDrawerOpen(false)}
+          session={session}
+          onProfileUpdate={() => fetchCloudData(session?.user?.id || '')}
+        />
       </div>
     </div>
   );
