@@ -115,8 +115,14 @@ export default function App() {
       }
       
       const { data: profileData } = await supabase.from('user_profiles').select('*').eq('id', userId).single();
-      if (profileData && profileData.yearly_goal) {
-        setYearlyGoal(profileData.yearly_goal);
+      if (profileData) {
+        if (profileData.yearly_goal) {
+          setYearlyGoal(profileData.yearly_goal);
+        }
+        if (profileData.display_name) {
+          setUserName(profileData.display_name);
+          localStorage.setItem('bt_user_name', profileData.display_name);
+        }
       }
     } catch (e) {
       console.error('Failed to sync from cloud', e);
@@ -252,7 +258,6 @@ export default function App() {
     return localStorage.getItem('bt_user_name') || '';
   });
 
-  const [isEditingName, setIsEditingName] = useState<boolean>(() => !localStorage.getItem('bt_user_name'));
   const [isEditingGoal, setIsEditingGoal] = useState<boolean>(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
 
@@ -551,18 +556,19 @@ export default function App() {
         
         {/* Sleek App Branding & Navigation */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-app-border pb-6 relative z-50">
-          <div className="flex items-center gap-3.5 flex-1">
-            <div className="relative">
-              {/* Purple glowing banner ring */}
-              <div className="absolute -inset-1 bg-brand-purple/20 rounded-xl blur-md -z-10 pointer-events-none" />
-              <button 
-                onClick={() => setIsNavMenuOpen(!isNavMenuOpen)}
-                className="relative px-3 py-2 bg-app-card border border-brand-purple/30 text-brand-purple rounded-xl shadow-lg cursor-pointer hover:bg-brand-purple/10 transition-colors flex items-center gap-2"
-                title="Navigation Menu"
-              >
-                <BookOpen size={18} className="stroke-[1.8]" />
-                <span className="text-sm font-bold tracking-wide capitalize">{currentPage}</span>
-              </button>
+          <div className="flex items-center justify-between gap-3.5 flex-1">
+            <div className="flex items-center gap-3.5">
+              <div className="relative">
+                {/* Purple glowing banner ring */}
+                <div className="absolute -inset-1 bg-brand-purple/20 rounded-xl blur-md -z-10 pointer-events-none" />
+                <button 
+                  onClick={() => setIsNavMenuOpen(!isNavMenuOpen)}
+                  className="relative px-3 py-2 bg-app-card border border-brand-purple/30 text-brand-purple rounded-xl shadow-lg cursor-pointer hover:bg-brand-purple/10 transition-colors flex items-center gap-2"
+                  title="Navigation Menu"
+                >
+                  <BookOpen size={18} className="stroke-[1.8]" />
+                  <span className="text-sm font-bold tracking-wide capitalize">{currentPage}</span>
+                </button>
               
               {/* Navigation Dropdown Menu on click */}
               {isNavMenuOpen && (
@@ -599,8 +605,17 @@ export default function App() {
                 </>
               )}
             </div>
+            </div>
             
-            <div className="flex-1">
+            <button
+              onClick={() => setIsProfileDrawerOpen(true)}
+              className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto md:hidden"
+              title="Profile Settings"
+            >
+              <User size={18} className="group-hover:scale-110 transition-transform" />
+            </button>
+            
+            <div className="flex-1 hidden md:block">
               <div className="flex items-center gap-2 flex-wrap">
                 {currentPage !== 'home' && (
                   <button 
@@ -610,48 +625,23 @@ export default function App() {
                     Home
                   </button>
                 )}
-                {isEditingName ? (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          setIsEditingName(false);
-                        }
-                      }}
-                      placeholder="Your Name"
-                      className="bg-black/20 border border-app-border rounded px-2.5 py-1 text-xs font-semibold text-[#CAB9D4] focus:text-[var(--color-text-main)] focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple w-28 sm:w-32 transition-all placeholder:text-gray-600"
-                      title="Personalize your reading log with your name"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => setIsEditingName(false)}
-                      className="p-1 px-2 bg-brand-purple/10 border border-brand-purple/20 text-brand-purple hover:bg-brand-purple hover:text-[#340F04] text-[10px] font-bold rounded transition-all cursor-pointer flex items-center gap-0.5"
-                      title="Save name"
-                    >
-                      <Check size={10} /> Done
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 group/name">
-                    <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
-                      {userName ? `${userName}'s ` : ''}SaveState
-                    </h1>
-                    <button
-                      onClick={() => setIsEditingName(true)}
-                      className="p-1 text-[var(--color-text-muted)] hover:text-brand-purple bg-black/10 rounded border border-transparent hover:border-app-border opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                      title="Edit personalized name"
-                    >
-                      <Pencil size={11} />
-                    </button>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 group/name">
+                  <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
+                    {userName ? `${userName}'s ` : ''}SaveState
+                  </h1>
+                </div>
               </div>
             </div>
+            
+            <button
+              onClick={() => setIsProfileDrawerOpen(true)}
+              className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple hidden md:flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto"
+              title="Profile Settings"
+            >
+              <User size={18} className="group-hover:scale-110 transition-transform" />
+            </button>
+            
           </div>
-
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 shrink-0 relative">
             <div className="flex flex-col items-end gap-1">
               {autosaveStatus && (
@@ -667,14 +657,6 @@ export default function App() {
             </div>
             
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setIsProfileDrawerOpen(true)}
-                className="w-8 h-8 rounded-full bg-brand-purple/20 border border-brand-purple/40 text-brand-purple flex items-center justify-center hover:bg-brand-purple hover:text-[#340F04] transition-colors cursor-pointer"
-                title="Account Settings"
-              >
-                <User size={16} />
-              </button>
-
               <div className="relative group">
                 <select 
                   value={preferences.shelfSkin || 'Apothecary'} 
