@@ -17,6 +17,7 @@ import { SavePoint } from './types';
 import { CommunityFeed } from "./components/CommunityFeed";
 import { UserProfile } from "./components/UserProfile";
 import { ProfileDrawer } from "./components/ProfileDrawer";
+import { InstallGuide } from "./components/InstallGuide";
 import { Users } from "lucide-react";
 import { BookOpen, Calendar, Star, Plus, Minus, Trophy, Sparkles, ChevronDown, ChevronUp, Share2, Pencil, Check, BarChart2, BookMarked, Quote, ArrowUp, ArrowDown, Settings, Headphones, Film, Tv, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -211,8 +212,10 @@ export default function App() {
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
 
   // Pagination / Theme state
-  type Page = 'home' | 'community' | 'profile' | 'shelves' | 'podcasts' | 'movies' | 'tv' | 'notebook' | 'quotes' | 'achievements' | 'sync' | 'settings';
-  const [currentPage, setCurrentPage] = useState<Page>('home');
+  type Page = 'install' | 'home' | 'community' | 'profile' | 'shelves' | 'podcasts' | 'movies' | 'tv' | 'notebook' | 'quotes' | 'achievements' | 'sync' | 'settings';
+  const [currentPage, setCurrentPage] = useState<Page>(() => {
+    return localStorage.getItem('bt_has_seen_install') ? 'home' : 'install';
+  });
   const [shelfTab, setShelfTab] = useState<'books' | 'podcasts' | 'movies' | 'tv'>('books');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
@@ -582,8 +585,15 @@ export default function App() {
       {/* Main Container */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-9 space-y-8 relative z-10">
         
-        {/* Sleek App Branding & Navigation */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-app-border pb-6 relative z-50">
+        {currentPage === 'install' ? (
+          <InstallGuide onEnterApp={() => {
+            localStorage.setItem('bt_has_seen_install', 'true');
+            setCurrentPage('home');
+          }} />
+        ) : (
+          <>
+            {/* Sleek App Branding & Navigation */}
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-app-border pb-6 relative z-50">
           <div className="flex items-center justify-between gap-3.5 flex-1">
             <div className="flex items-center gap-3.5">
               <div className="relative">
@@ -613,7 +623,7 @@ export default function App() {
                       <Users size={14} /> Reviews
                     </button>
                     <button onClick={() => { setCurrentPage('shelves'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'shelves' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <BookMarked size={14} /> Books
+                      <BookMarked size={14} /> Shelves
                     </button>
 
                     <button onClick={() => { setCurrentPage('notebook'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'notebook' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
@@ -953,6 +963,8 @@ export default function App() {
           <p>© 2026 SaveState · Multimedia Tracking Log.</p>
           <p>Powered by Open Library indexing API.</p>
         </footer>
+        </>
+        )}
 
         {/* Book Details and Journal Modal overlay shadow */}
         <AnimatePresence>
