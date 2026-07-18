@@ -123,6 +123,10 @@ export default function App() {
           setUserName(profileData.display_name);
           localStorage.setItem('bt_user_name', profileData.display_name);
         }
+        if (profileData.avatar_url) {
+          setUserAvatar(profileData.avatar_url);
+          localStorage.setItem('bt_user_avatar', profileData.avatar_url);
+        }
       }
     } catch (e) {
       console.error('Failed to sync from cloud', e);
@@ -212,8 +216,8 @@ export default function App() {
   const [shelfTab, setShelfTab] = useState<'books' | 'podcasts' | 'movies' | 'tv'>('books');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'jx' | 'neon' | 'pastel' | 'rainbow'>(() => {
-    return (localStorage.getItem('bt_theme') as any) || 'jx';
+  const [theme, setTheme] = useState<'jx' | 'neon' | 'pastel' | 'rainbow' | 'savestate'>(() => {
+    return (localStorage.getItem('bt_theme') as any) || 'savestate';
   });
 
   const [preferences, setPreferences] = useState<AppPreferences>(() => {
@@ -221,7 +225,7 @@ export default function App() {
     if (saved) return JSON.parse(saved);
     return {
       fontFamily: 'sans',
-      theme: (localStorage.getItem('bt_theme') as any) || 'jx',
+      theme: (localStorage.getItem('bt_theme') as any) || 'savestate',
       calendarStartDay: 'sunday',
       showDailyGoal: true,
       accentColor: '#CAB9D4',
@@ -257,7 +261,12 @@ export default function App() {
   const [userName, setUserName] = useState<string>(() => {
     return localStorage.getItem('bt_user_name') || '';
   });
+  
+  const [userAvatar, setUserAvatar] = useState<string>(() => {
+    return localStorage.getItem('bt_user_avatar') || '/icon-512.png';
+  });
 
+  const [prefilledDate, setPrefilledDate] = useState<string>('');
   const [isEditingGoal, setIsEditingGoal] = useState<boolean>(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
 
@@ -265,6 +274,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('bt_user_name', userName);
   }, [userName]);
+  
+  useEffect(() => {
+    localStorage.setItem('bt_user_avatar', userAvatar);
+  }, [userAvatar]);
 
   useEffect(() => {
     localStorage.setItem('bt_books', JSON.stringify(books));
@@ -546,13 +559,26 @@ export default function App() {
   }
 
   return (
-    <div data-theme={theme} className={`min-h-screen bg-app-base text-[var(--color-text-main)] font-${preferences.fontFamily} selection:bg-brand-purple/30 selection:text-[var(--color-text-main)] pb-16 transition-colors duration-500`}>
+    <div data-theme={theme} className={`min-h-screen bg-app-base text-[var(--color-text-main)] font-${preferences.fontFamily} selection:bg-brand-purple/30 selection:text-[var(--color-text-main)] pb-16 transition-colors duration-500 relative overflow-hidden`}>
       {/* Outer ambient subtle mahogany deep glowing backgrounds to set the mood */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-brand-brown/[0.12] blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute top-24 left-1/4 w-[280px] h-[280px] bg-brand-purple/[0.03] blur-[100px] rounded-full pointer-events-none" />
 
+      {/* Savestate Theme Background Vectors (Circuitry Ws) */}
+      <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
+        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          {/* Left Side Ws */}
+          <path d="M 10,120 L 10,80 L 20,60 L 10,40 L 20,20 L 10,0 L 10,-20" stroke="var(--color-brand-purple)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-purple)]" />
+          <path d="M 15,120 L 15,85 L 25,65 L 15,45 L 25,25 L 15,5 L 15,-20" stroke="var(--color-brand-teal)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-teal)]" />
+          
+          {/* Right Side Ws */}
+          <path d="M 90,120 L 90,80 L 80,60 L 90,40 L 80,20 L 90,0 L 90,-20" stroke="var(--color-brand-magenta)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-magenta)]" />
+          <path d="M 85,120 L 85,85 L 75,65 L 85,45 L 75,25 L 85,5 L 85,-20" stroke="var(--color-brand-yellow)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-yellow)]" />
+        </svg>
+      </div>
+
       {/* Main Container */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-9 space-y-8 relative">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-9 space-y-8 relative z-10">
         
         {/* Sleek App Branding & Navigation */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-app-border pb-6 relative z-50">
@@ -607,25 +633,17 @@ export default function App() {
             </div>
             </div>
             
-            <button
-              onClick={() => setIsProfileDrawerOpen(true)}
-              className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto md:hidden"
-              title="Profile Settings"
-            >
-              <User size={18} className="group-hover:scale-110 transition-transform" />
-            </button>
-            
-            <div className="flex-1 hidden md:block">
+            <div className="flex-1 flex items-center">
               <div className="flex items-center gap-2 flex-wrap">
                 {currentPage !== 'home' && (
                   <button 
                     onClick={() => setCurrentPage('home')}
-                    className="text-xs font-bold text-[var(--color-text-muted)] hover:text-brand-purple transition-colors bg-black/20 border border-app-border px-2 py-1 rounded cursor-pointer"
+                    className="text-xs font-bold text-[var(--color-text-muted)] hover:text-brand-purple transition-colors bg-black/20 border border-app-border px-2 py-1 rounded cursor-pointer hidden md:block"
                   >
                     Home
                   </button>
                 )}
-                <div className="flex items-center gap-1.5 group/name">
+                <div className="flex items-center gap-1.5 group/name pl-1 md:pl-0">
                   <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
                     {userName ? `${userName}'s ` : ''}SaveState
                   </h1>
@@ -635,10 +653,18 @@ export default function App() {
             
             <button
               onClick={() => setIsProfileDrawerOpen(true)}
+              className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto md:hidden shrink-0"
+              title="Profile Settings"
+            >
+              <img src={userAvatar} alt="Profile Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+            </button>
+            
+            <button
+              onClick={() => setIsProfileDrawerOpen(true)}
               className="w-9 h-9 rounded-full bg-brand-purple/10 border border-brand-purple/30 text-brand-purple hidden md:flex items-center justify-center hover:bg-brand-purple/20 transition-colors cursor-pointer shadow-sm relative overflow-hidden group ml-auto"
               title="Profile Settings"
             >
-              <User size={18} className="group-hover:scale-110 transition-transform" />
+              <img src={userAvatar} alt="Profile Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
             </button>
             
           </div>
@@ -834,6 +860,11 @@ export default function App() {
                 mediaLogs={mediaLogs} 
                 mediaReviews={mediaReviews}
                 savePoints={savePoints}
+                onUpdateMediaItem={handleUpdateMediaItem}
+                onRemoveMediaItem={handleRemoveMediaItem}
+                onSaveReview={handleSaveMediaReview}
+                onAddMediaLog={handleAddMediaLog}
+                onRemoveMediaLog={handleRemoveMediaLog}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
                     const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };
@@ -852,6 +883,11 @@ export default function App() {
                 mediaLogs={mediaLogs} 
                 mediaReviews={mediaReviews}
                 savePoints={savePoints}
+                onUpdateMediaItem={handleUpdateMediaItem}
+                onRemoveMediaItem={handleRemoveMediaItem}
+                onSaveReview={handleSaveMediaReview}
+                onAddMediaLog={handleAddMediaLog}
+                onRemoveMediaLog={handleRemoveMediaLog}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
                     const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };
@@ -870,6 +906,11 @@ export default function App() {
                 mediaLogs={mediaLogs} 
                 mediaReviews={mediaReviews}
                 savePoints={savePoints}
+                onUpdateMediaItem={handleUpdateMediaItem}
+                onRemoveMediaItem={handleRemoveMediaItem}
+                onSaveReview={handleSaveMediaReview}
+                onAddMediaLog={handleAddMediaLog}
+                onRemoveMediaLog={handleRemoveMediaLog}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
                     const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };

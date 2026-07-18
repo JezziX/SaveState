@@ -141,27 +141,26 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
                   <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
                     <ImageIcon size={10} /> Choose Avatar
                   </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => {
-                      const presetUrl = `https://api.dicebear.com/7.x/pixel-art/svg?seed=Mascot${num}`;
+                  <div className="flex justify-center">
+                    {(() => {
+                      const presetUrl = `/icon-512.png`;
                       return (
                         <button
-                          key={num}
                           type="button"
                           onClick={() => setAvatarUrl(presetUrl)}
-                          className={`relative aspect-square rounded-lg border-2 overflow-hidden transition-all hover:scale-105 cursor-pointer ${
+                          className={`relative w-24 h-24 rounded-lg border-2 overflow-hidden transition-all hover:scale-105 cursor-pointer ${
                             avatarUrl === presetUrl ? 'border-brand-purple shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'border-app-border opacity-60 hover:opacity-100'
                           }`}
                         >
-                          <img src={presetUrl} alt={`Preset ${num}`} className="w-full h-full object-cover bg-black/40" />
+                          <img src={presetUrl} alt="Mascot Logo" className="w-full h-full object-cover bg-black/40" />
                           {avatarUrl === presetUrl && (
                             <div className="absolute inset-0 bg-brand-purple/20 flex items-center justify-center">
-                              <Check size={16} className="text-white drop-shadow-md" />
+                              <Check size={20} className="text-white drop-shadow-md" />
                             </div>
                           )}
                         </button>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
 

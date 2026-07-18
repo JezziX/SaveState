@@ -58,7 +58,7 @@ export function UserProfile({ userId, onBack }: UserProfileProps) {
 
   // Use real data if available, fallback to mock data
   const displayName = profile?.display_name || mockUser?.displayName || 'Anonymous Reader';
-  const avatarUrl = profile?.avatar_url || mockUser?.avatarUrl || '';
+  const avatarUrl = profile?.avatar_url || mockUser?.avatarUrl || '/icon-512.png';
   const bio = profile?.bio || mockUser?.bio || 'No bio provided.';
   const unlockedBadges = profile?.unlocked_badges || mockUser?.badges || [];
   const activeSkin = profile?.active_skin || 'jx';

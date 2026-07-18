@@ -72,7 +72,7 @@ export interface MediaReview {
 
 export interface AppPreferences {
   fontFamily: 'sans' | 'serif' | 'mono' | 'display' | 'handwriting' | 'merriweather' | 'playfair' | 'cinzel' | 'lora' | 'firacode' | 'plusjakarta';
-  theme: 'jx' | 'neon' | 'pastel' | 'rainbow' | 'dark' | 'coffee' | 'midnight' | 'apothecary' | 'cozy' | 'cyber' | 'forest';
+  theme: 'jx' | 'neon' | 'pastel' | 'rainbow' | 'dark' | 'coffee' | 'midnight' | 'apothecary' | 'cozy' | 'cyber' | 'forest' | 'savestate';
   calendarStartDay: 'sunday' | 'monday';
   showDailyGoal: boolean;
   shelfSkin?: string;
@@ -102,6 +102,7 @@ export interface UserProfile {
 }
 
 export interface SocialUser {
+  id: string;
   displayName: string;
   avatarUrl: string;
   bio: string;

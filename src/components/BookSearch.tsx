@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface BookSearchProps {
   onAddBook: (book: Book) => void;
   existingBookIds: string[];
+  defaultStartDate?: string;
 }
 
 export function BookSearch({ onAddBook, existingBookIds }: BookSearchProps) {

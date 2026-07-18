@@ -2,101 +2,21 @@
 @import "tailwindcss";
 
 @layer base {
-  :root, [data-theme="jx"] {
-    --color-app-base: #121216;
-    --color-app-card: #1a1a22;
-    --color-app-border: #2d2d3a;
-    --shadow-app-glow: 0 0 20px rgba(168,85,247,0.15);
-    --color-brand-brown: #340F04;
-    --color-brand-purple: #CAB9D4;
-    --color-brand-teal: #415D62;
-    --color-brand-turquoise: #57C7BE;
-    --color-text-main: #ffffff;
-    --color-text-muted: #9ca3af;
-  }
-  [data-theme="neon"] {
+  :root, [data-theme="savestate"], [data-theme="jx"], [data-theme="neon"], [data-theme="pastel"], [data-theme="rainbow"] {
     --color-app-base: #050510;
-    --color-app-card: #0a0a1a;
-    --color-app-border: rgba(255, 0, 255, 0.4);
-    --shadow-app-glow: 0 0 25px rgba(255,0,255,0.3);
-    --color-brand-brown: #000000;
-    --color-brand-purple: #ff00ff;
-    --color-brand-teal: #00ffff;
-    --color-brand-turquoise: #00ffff;
+    --color-app-card: rgba(10, 10, 28, 0.75);
+    --color-app-border: #07a1f9;
+    --shadow-app-glow: 0 0 15px rgba(7, 161, 249, 0.3), inset 0 0 10px rgba(7, 161, 249, 0.1);
+    
+    --color-brand-brown: #0a0a1c;
+    --color-brand-purple: #d721f9; /* Pulse Lavender */
+    --color-brand-teal: #a00df6; /* Electric Cyan */
+    --color-brand-turquoise: #07a1f9;
+    --color-brand-magenta: #f90072; /* Magenta Ray */
+    --color-brand-yellow: #ffe600; /* Yellow Glow */
+    
     --color-text-main: #ffffff;
-    --color-text-muted: #9ca3af;
-  }
-  [data-theme="pastel"] {
-    --color-app-base: #2a2530;
-    --color-app-card: #3b3245;
-    --color-app-border: rgba(252, 165, 165, 0.5);
-    --shadow-app-glow: 0 0 30px rgba(252,165,165,0.25);
-    --color-brand-brown: #1a1520;
-    --color-brand-purple: #fca5a5;
-    --color-brand-teal: #93c5fd;
-    --color-brand-turquoise: #a7f3d0;
-    --color-text-main: #ffffff;
-    --color-text-muted: #d1d5db;
-  }
-  [data-theme="rainbow"] {
-    --color-app-base: #0f0a14;
-    --color-app-card: #181024;
-    --color-app-border: rgba(59, 130, 246, 0.5);
-    --shadow-app-glow: 0 0 25px rgba(244,63,94,0.2), 0 0 45px rgba(59,130,246,0.15);
-    --color-brand-brown: #000000;
-    --color-brand-purple: #f43f5e;
-    --color-brand-teal: #10b981;
-    --color-brand-turquoise: #3b82f6;
-    --color-text-main: #ffffff;
-    --color-text-muted: #9ca3af;
-  }
-  [data-theme="apothecary"] {
-    --color-app-base: #121016;
-    --color-app-card: #1c1825;
-    --color-app-border: #443c52;
-    --shadow-app-glow: 0 0 20px rgba(212,175,55,0.15);
-    --color-brand-brown: #252033;
-    --color-brand-purple: #d4af37;
-    --color-brand-teal: #a89f91;
-    --color-brand-turquoise: #d4af37;
-    --color-text-main: #e6e6fa;
-    --color-text-muted: #a7a2c2;
-  }
-  [data-theme="cozy"] {
-    --color-app-base: #1f1a17;
-    --color-app-card: #2a2420;
-    --color-app-border: #3d342d;
-    --shadow-app-glow: 0 0 20px rgba(224,159,62,0.15);
-    --color-brand-brown: #1f1a17;
-    --color-brand-purple: #e09f3e;
-    --color-brand-teal: #d8c3a5;
-    --color-brand-turquoise: #e09f3e;
-    --color-text-main: #f5f5dc;
-    --color-text-muted: #bda38b;
-  }
-  [data-theme="cyber"] {
-    --color-app-base: #0a0a0f;
-    --color-app-card: #12121c;
-    --color-app-border: #212133;
-    --shadow-app-glow: 0 0 25px rgba(0,240,255,0.3);
-    --color-brand-brown: #000000;
-    --color-brand-purple: #ff007f;
-    --color-brand-teal: #00f0ff;
-    --color-brand-turquoise: #00f0ff;
-    --color-text-main: #ffffff;
-    --color-text-muted: #757c91;
-  }
-  [data-theme="forest"] {
-    --color-app-base: #0f1715;
-    --color-app-card: #182420;
-    --color-app-border: #25332e;
-    --shadow-app-glow: 0 0 20px rgba(132,169,140,0.15);
-    --color-brand-brown: #0b1210;
-    --color-brand-purple: #84a98c;
-    --color-brand-teal: #52796f;
-    --color-brand-turquoise: #84a98c;
-    --color-text-main: #fffdd0;
-    --color-text-muted: #7d9e92;
+    --color-text-muted: #bfeaff;
   }
   
   body {
@@ -122,6 +42,8 @@
   --color-brand-purple: var(--color-brand-purple);
   --color-brand-teal: var(--color-brand-teal);
   --color-brand-turquoise: var(--color-brand-turquoise);
+  --color-brand-magenta: var(--color-brand-magenta);
+  --color-brand-yellow: var(--color-brand-yellow);
   
   --color-app-base: var(--color-app-base);
   --color-app-card: var(--color-app-card);
@@ -132,16 +54,43 @@
   --shadow-app-glow: var(--shadow-app-glow);
 }
 
-/* Custom minimal scrollbar */
+.bg-app-card, [class*="bg-app-card"] {
+  position: relative !important;
+  background-color: var(--color-app-card) !important;
+  border: 1px solid var(--color-app-border) !important;
+  box-shadow: var(--shadow-app-glow) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.bg-app-card::before, [class*="bg-app-card"]::before {
+  content: "_ \\25A1  \\00D7";
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 6px;
+  color: var(--color-brand-purple);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 10;
+}
+
+h1, h2, h3, h4 {
+  text-shadow: 0 0 10px rgba(215, 33, 249, 0.4);
+}
+
+/* Add custom minimal scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-app-base);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-app-border);
+  background: var(--color-brand-teal);
   border-radius: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
