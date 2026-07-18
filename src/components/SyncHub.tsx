@@ -33,7 +33,7 @@ interface SyncHubProps {
   currentYearlyGoal?: number;
 }
 
-type ModeTab = 'native-vault' | 'cloud-sync' | 'third-party';
+type ModeTab = 'native-vault' | 'third-party';
 
 // Create a unique user-friendly vault sync code
 const generateRandomSyncCode = () => {
@@ -48,7 +48,7 @@ const generateRandomSyncCode = () => {
 export function SyncHub({ appState, onImportState, currentUserName, currentYearlyGoal }: SyncHubProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<ModeTab>('cloud-sync'); // Default to cloud-sync as it's the requested feature
+  const [activeTab, setActiveTab] = useState<ModeTab>('native-vault'); // Default to cloud-sync as it's the requested feature
   
   // Importer states
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -544,16 +544,7 @@ export function SyncHub({ appState, onImportState, currentUserName, currentYearl
 
         {/* Sync Settings Tabs */}
         <div className="flex bg-app-base border border-app-border p-0.5 rounded-lg text-xs">
-          <button
-            onClick={() => setActiveTab('cloud-sync')}
-            className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'cloud-sync'
-                ? 'bg-brand-purple text-[#340F04] font-extrabold shadow-sm'
-                : 'text-[var(--color-text-muted)] hover:text-white'
-            }`}
-          >
-            <Cloud size={11} /> Supabase Sync
-          </button>
+          
           <button
             onClick={() => setActiveTab('native-vault')}
             className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${

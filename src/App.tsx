@@ -6,9 +6,9 @@ import { BookSearch } from './components/BookSearch';
 import { MyLibrary } from './components/MyLibrary';
 import { BookDetailModal } from './components/BookDetailModal';
 import { BookCelebrationModal } from './components/BookCelebrationModal';
-import { SyncHub } from './components/SyncHub';
 import { NotesNotebook } from './components/NotesNotebook';
 import { AchievementsDashboard } from './components/AchievementsDashboard';
+import { SyncHub } from './components/SyncHub';
 import { QuoteDeck } from './components/QuoteDeck';
 import { SettingsPanel } from './components/SettingsPanel';
 import { MediaLibrary } from './components/MediaLibrary';
@@ -20,6 +20,8 @@ import { Users } from "lucide-react";
 import { BookOpen, Calendar, Star, Plus, Minus, Trophy, Sparkles, ChevronDown, ChevronUp, Share2, Pencil, Check, BarChart2, BookMarked, Quote, ArrowUp, ArrowDown, Settings, Headphones, Film, Tv } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { supabase } from './utils/supabaseClient';
+import { Auth } from './components/Auth';
+import { Session } from '@supabase/supabase-js';
 
 // Pre-populate some historical completed logs so the calendar is visually striking out-of-the-box
 const getOnboardingLogs = (): ReadingLog[] => {
@@ -50,6 +52,105 @@ const DEFAULT_REVIEWS: BookReview[] = [
 ];
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        fetchCloudData(session.user.id);
+      } else {
+        setIsInitializing(false);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        fetchCloudData(session.user.id);
+      }
+    });
+
+    // Realtime subscriptions
+    const mediaSub = supabase.channel('media_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'media_items' }, () => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) fetchCloudData(session.user.id);
+        });
+      }).subscribe();
+      
+    const savePointsSub = supabase.channel('sp_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'save_points' }, () => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) fetchCloudData(session.user.id);
+        });
+      }).subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(mediaSub);
+      supabase.removeChannel(savePointsSub);
+    };
+  }, []);
+
+  const fetchCloudData = async (userId: string) => {
+    try {
+      const [mediaRes, spRes] = await Promise.all([
+        supabase.from('media_items').select('*').eq('user_id', userId),
+        supabase.from('save_points').select('*').eq('user_id', userId)
+      ]);
+      
+      if (mediaRes.data) {
+        const cloudBooks = mediaRes.data.filter((m: any) => m.type === 'book');
+        const cloudMedia = mediaRes.data.filter((m: any) => m.type !== 'book');
+        if (cloudBooks.length > 0) setBooks(cloudBooks as any);
+        if (cloudMedia.length > 0) setMediaItems(cloudMedia as any);
+      }
+      if (spRes.data && spRes.data.length > 0) {
+        setSavePoints(spRes.data as any);
+      }
+      
+      const { data: profileData } = await supabase.from('user_profiles').select('*').eq('id', userId).single();
+      if (profileData && profileData.yearly_goal) {
+        setYearlyGoal(profileData.yearly_goal);
+      }
+    } catch (e) {
+      console.error('Failed to sync from cloud', e);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  const pushMediaItem = async (item: any, type: string) => {
+    if (!session) return;
+    try {
+      await supabase.from('media_items').upsert({ user_id: session.user.id, type, ...item });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const pushSavePoint = async (sp: any) => {
+    if (!session) return;
+    try {
+      await supabase.from('save_points').upsert({ user_id: session.user.id, ...sp });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const pushGoal = async (goal: number) => {
+    if (!session) return;
+    try {
+      await supabase.from('user_profiles').upsert({ id: session.user.id, yearly_goal: goal });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   // State Initialization from LocalStorage or starters
   const [books, setBooks] = useState<Book[]>(() => {
     const saved = localStorage.getItem('bt_books');
@@ -101,6 +202,7 @@ export default function App() {
   // Pagination / Theme state
   type Page = 'home' | 'community' | 'profile' | 'shelves' | 'podcasts' | 'movies' | 'tv' | 'notebook' | 'quotes' | 'achievements' | 'sync' | 'settings';
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [shelfTab, setShelfTab] = useState<'books' | 'podcasts' | 'movies' | 'tv'>('books');
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'jx' | 'neon' | 'pastel' | 'rainbow'>(() => {
@@ -267,6 +369,7 @@ export default function App() {
   const handleAddBook = (newBook: Book) => {
     if (books.some(b => b.id === newBook.id)) return;
     setBooks(prev => [newBook, ...prev]);
+    pushMediaItem(newBook, 'book');
 
     // Construct correct ReadingLog depending on what was input:
     const status: ReadingLog['status'] = newBook.didNotFinish
@@ -297,6 +400,7 @@ export default function App() {
 
   const handleUpdateBook = (updatedBook: Book) => {
     setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
+    pushMediaItem(updatedBook, 'book');
   };
 
   const handleNextBook = () => {
@@ -416,10 +520,23 @@ export default function App() {
 
   // Click on a calendar day logs callback
   const handleSelectDate = (dateString: string) => {
-    // Scroll or focus could go here
+    setPrefilledDate(dateString);
+    setIsAddOpen(true);
+    // Let it render then scroll to Add+ section
+    setTimeout(() => {
+      document.getElementById('add-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const activeReview = reviews.find(r => r.bookId === selectedBookId);
+
+  if (isInitializing) {
+    return <div className="min-h-screen bg-app-base flex items-center justify-center"><div className="animate-spin text-brand-purple">Loading...</div></div>;
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
 
   return (
     <div data-theme={theme} className={`min-h-screen bg-app-base text-[var(--color-text-main)] font-${preferences.fontFamily} selection:bg-brand-purple/30 selection:text-[var(--color-text-main)] pb-16 transition-colors duration-500`}>
@@ -462,15 +579,7 @@ export default function App() {
                     <button onClick={() => { setCurrentPage('shelves'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'shelves' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <BookMarked size={14} /> Books
                     </button>
-                    <button onClick={() => { setCurrentPage('podcasts'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'podcasts' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <Headphones size={14} /> Podcasts
-                    </button>
-                    <button onClick={() => { setCurrentPage('movies'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'movies' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <Film size={14} /> Movies
-                    </button>
-                    <button onClick={() => { setCurrentPage('tv'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'tv' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <Tv size={14} /> TV
-                    </button>
+
                     <button onClick={() => { setCurrentPage('notebook'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'notebook' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <Pencil size={14} /> Notes
                     </button>
@@ -480,9 +589,7 @@ export default function App() {
                     <button onClick={() => { setCurrentPage('achievements'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'achievements' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <Trophy size={14} /> Save Points
                     </button>
-                    <button onClick={() => { setCurrentPage('sync'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'sync' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
-                      <Share2 size={14} /> Sync
-                    </button>
+
                     <button onClick={() => { setCurrentPage('settings'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'settings' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <Settings size={14} /> Settings
                     </button>
@@ -611,9 +718,9 @@ export default function App() {
                       <div className="flex items-center gap-3 bg-black/40 border border-brand-purple/40 rounded-lg px-3 py-1.5 self-start sm:self-auto shadow-md">
                         <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Set Goal:</span>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => setYearlyGoal(prev => Math.max(1, prev - 1))} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] hover:text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Minus size={10} /></button>
-                          <input type="number" min="1" value={yearlyGoal || ''} onChange={(e) => { const val = parseInt(e.target.value, 10); setYearlyGoal(isNaN(val) ? 0 : Math.max(0, val)); }} onBlur={() => { if (!yearlyGoal || yearlyGoal < 1) setYearlyGoal(1); }} className="w-12 bg-black/50 border border-app-border rounded-md py-0.5 text-xs font-black text-brand-purple font-mono text-center focus:outline-hidden focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/40" />
-                          <button onClick={() => setYearlyGoal(prev => prev + 1)} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] hover:text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Plus size={10} /></button>
+                          <button onClick={() => setYearlyGoal(prev => { const n = Math.max(1, prev - 1); pushGoal(n); return n; })} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] hover:text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Minus size={10} /></button>
+                          <input type="number" min="1" value={yearlyGoal || ''} onChange={(e) => { const val = parseInt(e.target.value, 10); const n = isNaN(val) ? 0 : Math.max(0, val); setYearlyGoal(n); pushGoal(n); }} onBlur={() => { if (!yearlyGoal || yearlyGoal < 1) { setYearlyGoal(1); pushGoal(1); } }} className="w-12 bg-black/50 border border-app-border rounded-md py-0.5 text-xs font-black text-brand-purple font-mono text-center focus:outline-hidden focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/40" />
+                          <button onClick={() => setYearlyGoal(prev => { const n = prev + 1; pushGoal(n); return n; })} className="p-1 bg-[#141417] hover:bg-[#202027] text-[var(--color-text-main)] hover:text-[var(--color-text-main)] rounded border border-app-border cursor-pointer"><Plus size={10} /></button>
                         </div>
                         <button onClick={() => setIsEditingGoal(false)} className="p-1 px-2.5 bg-brand-purple/10 border border-brand-purple/20 text-brand-purple hover:bg-brand-purple hover:text-[#340F04] text-[10px] font-bold rounded transition-all cursor-pointer flex items-center gap-0.5"><Check size={10} /> Done</button>
                       </div>
@@ -649,8 +756,8 @@ export default function App() {
               </section>
 
               {/* ADD SECTION */}
-              <section className="bg-app-card border border-app-border rounded-xl p-4 shadow-app-glow relative transition-all duration-300">
-                <div className="flex items-center justify-between cursor-pointer select-none group" onClick={() => setIsAddOpen(prev => !prev)}>
+              <section id="add-section" className="bg-app-card border border-app-border rounded-xl p-4 shadow-app-glow relative transition-all duration-300">
+                <div className="flex items-center justify-between cursor-pointer select-none group" onClick={() => { setIsAddOpen(prev => !prev); if (isAddOpen) setPrefilledDate(''); }}>
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <div className="p-1.5 bg-brand-purple/10 text-brand-purple rounded-md group-hover:scale-105 transition-transform shrink-0"><Sparkles size={14} /></div>
                     <div className="flex-1 min-w-0">
@@ -664,7 +771,7 @@ export default function App() {
                 <AnimatePresence>
                   {isAddOpen && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden mt-4 pt-4 border-t border-app-border">
-                      <BookSearch onAddBook={handleAddBook} existingBookIds={books.map(b => b.id)} />
+                      <BookSearch onAddBook={handleAddBook} existingBookIds={books.map(b => b.id)} defaultStartDate={prefilledDate} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -685,7 +792,15 @@ export default function App() {
           )}
 
           {currentPage === 'shelves' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
+              <div className="flex border-b border-app-border mb-4">
+                <button onClick={() => setShelfTab('books')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${shelfTab === 'books' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-[var(--color-text-muted)]'}`}>Books</button>
+                <button onClick={() => setShelfTab('podcasts')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${shelfTab === 'podcasts' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-[var(--color-text-muted)]'}`}>Podcasts</button>
+                <button onClick={() => setShelfTab('movies')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${shelfTab === 'movies' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-[var(--color-text-muted)]'}`}>Movies</button>
+                <button onClick={() => setShelfTab('tv')} className={`px-4 py-2 text-xs font-bold uppercase tracking-wider ${shelfTab === 'tv' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-[var(--color-text-muted)]'}`}>TV</button>
+              </div>
+              <div className="flex-1 overflow-auto">
+              {shelfTab === 'books' && (
               <MyLibrary
                 theme={theme}
                 shelfSkin={preferences.shelfSkin || 'Apothecary'}
@@ -711,17 +826,16 @@ export default function App() {
                 savePoints={savePoints}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
-                    const next = [...prev, { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() }];
+                    const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };
+                    pushSavePoint(newSp);
+                    const next = [...prev, newSp];
                     if (next.length >= 15) unlockBadge('lore-master');
                     return next;
                   });
                 }}
               />
-            </div>
-          )}
-
-          {currentPage === 'podcasts' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              )}
+              {shelfTab === 'podcasts' && (
               <MediaLibrary 
                 type="podcast" 
                 mediaItems={mediaItems} 
@@ -730,37 +844,16 @@ export default function App() {
                 savePoints={savePoints}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
-                    const next = [...prev, { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() }];
+                    const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };
+                    pushSavePoint(newSp);
+                    const next = [...prev, newSp];
                     if (next.length >= 15) unlockBadge('lore-master');
                     return next;
                   });
                 }}
-                onTriggerRecap={(mediaId) => {
-                  const item = mediaItems.find(m => m.id === mediaId) || books.find(b => b.id === mediaId);
-                  if (item) {
-                    const itemSavePoints = savePoints.filter(sp => sp.mediaId === mediaId).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                    if (itemSavePoints.length > 0) {
-                      const lastSpDate = new Date(itemSavePoints[0].created_at);
-                      const threeMonthsAgo = new Date();
-                      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-                      if (lastSpDate < threeMonthsAgo) {
-                        unlockBadge('time-traveler');
-                      }
-                    }
-                    setRecapData({ isOpen: true, mediaTitle: item.title, mediaId });
-                  }
-                }}
-                onUpdateMediaItem={handleUpdateMediaItem} 
-                onRemoveMediaItem={handleRemoveMediaItem} 
-                onSaveReview={handleSaveMediaReview}
-                onAddMediaLog={handleAddMediaLog}
-                onRemoveMediaLog={handleRemoveMediaLog}
               />
-            </div>
-          )}
-
-          {currentPage === 'movies' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              )}
+              {shelfTab === 'movies' && (
               <MediaLibrary 
                 type="movie" 
                 mediaItems={mediaItems} 
@@ -769,37 +862,16 @@ export default function App() {
                 savePoints={savePoints}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
-                    const next = [...prev, { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() }];
+                    const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };
+                    pushSavePoint(newSp);
+                    const next = [...prev, newSp];
                     if (next.length >= 15) unlockBadge('lore-master');
                     return next;
                   });
                 }}
-                onTriggerRecap={(mediaId) => {
-                  const item = mediaItems.find(m => m.id === mediaId) || books.find(b => b.id === mediaId);
-                  if (item) {
-                    const itemSavePoints = savePoints.filter(sp => sp.mediaId === mediaId).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                    if (itemSavePoints.length > 0) {
-                      const lastSpDate = new Date(itemSavePoints[0].created_at);
-                      const threeMonthsAgo = new Date();
-                      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-                      if (lastSpDate < threeMonthsAgo) {
-                        unlockBadge('time-traveler');
-                      }
-                    }
-                    setRecapData({ isOpen: true, mediaTitle: item.title, mediaId });
-                  }
-                }}
-                onUpdateMediaItem={handleUpdateMediaItem} 
-                onRemoveMediaItem={handleRemoveMediaItem} 
-                onSaveReview={handleSaveMediaReview}
-                onAddMediaLog={handleAddMediaLog}
-                onRemoveMediaLog={handleRemoveMediaLog}
               />
-            </div>
-          )}
-
-          {currentPage === 'tv' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              )}
+              {shelfTab === 'tv' && (
               <MediaLibrary 
                 type="tv" 
                 mediaItems={mediaItems} 
@@ -808,32 +880,16 @@ export default function App() {
                 savePoints={savePoints}
                 onAddSavePoint={(sp) => {
                   setSavePoints(prev => {
-                    const next = [...prev, { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() }];
+                    const newSp = { ...sp, id: `sp_${Date.now()}`, created_at: new Date().toISOString() };
+                    pushSavePoint(newSp);
+                    const next = [...prev, newSp];
                     if (next.length >= 15) unlockBadge('lore-master');
                     return next;
                   });
                 }}
-                onTriggerRecap={(mediaId) => {
-                  const item = mediaItems.find(m => m.id === mediaId) || books.find(b => b.id === mediaId);
-                  if (item) {
-                    const itemSavePoints = savePoints.filter(sp => sp.mediaId === mediaId).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                    if (itemSavePoints.length > 0) {
-                      const lastSpDate = new Date(itemSavePoints[0].created_at);
-                      const threeMonthsAgo = new Date();
-                      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-                      if (lastSpDate < threeMonthsAgo) {
-                        unlockBadge('time-traveler');
-                      }
-                    }
-                    setRecapData({ isOpen: true, mediaTitle: item.title, mediaId });
-                  }
-                }}
-                onUpdateMediaItem={handleUpdateMediaItem} 
-                onRemoveMediaItem={handleRemoveMediaItem} 
-                onSaveReview={handleSaveMediaReview}
-                onAddMediaLog={handleAddMediaLog}
-                onRemoveMediaLog={handleRemoveMediaLog}
               />
+              )}
+              </div>
             </div>
           )}
 
@@ -857,10 +913,9 @@ export default function App() {
 
           {currentPage === 'sync' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <SyncHub appState={{ books, readingLogs, reviews }} onImportState={handleImportVault} currentUserName={userName} currentYearlyGoal={yearlyGoal} />
+              <SyncHub appState={{ books, readingLogs, reviews }} onImportState={() => {}} currentUserName={userName} currentYearlyGoal={yearlyGoal} />
             </div>
           )}
-
           {currentPage === 'settings' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <SettingsPanel 
