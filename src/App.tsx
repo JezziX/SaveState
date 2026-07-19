@@ -703,9 +703,21 @@ export default function App() {
   };
 
   const handleImportVault = (newState: AppState & { userName?: string; yearlyGoal?: number }) => {
-    if (newState.books) setBooks(newState.books);
+    if (newState.books) {
+      setBooks(newState.books);
+      // Push every imported book to the cloud too - otherwise a bulk import
+      // would look successful but only exist on this one device, same as
+      // the bug we just fixed for individual book/media saves.
+      newState.books.forEach(book => pushMediaItem(book, 'book'));
+    }
     if (newState.readingLogs) setReadingLogs(newState.readingLogs);
-    if (newState.reviews) setReviews(newState.reviews);
+    if (newState.reviews) {
+      setReviews(newState.reviews);
+      newState.reviews.forEach(review => {
+        const book = newState.books?.find(b => b.id === review.bookId);
+        if (book) pushReview(review, book.title, book.coverUrl);
+      });
+    }
     if (newState.userName !== undefined) setUserName(newState.userName);
     if (newState.yearlyGoal !== undefined) setYearlyGoal(newState.yearlyGoal);
   };

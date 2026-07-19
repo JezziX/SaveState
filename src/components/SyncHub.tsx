@@ -54,6 +54,8 @@ export function SyncHub({ appState, onImportState, currentUserName, currentYearl
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [importConflictMode, setImportConflictMode] = useState<'merge' | 'overwrite'>('merge');
+  const [showPasteBox, setShowPasteBox] = useState<boolean>(false);
+  const [pastedCSV, setPastedCSV] = useState<string>('');
 
   // Supabase Cloud Sync states
   const [syncCode, setSyncCode] = useState<string>(() => {
@@ -269,6 +271,34 @@ export function SyncHub({ appState, onImportState, currentUserName, currentYearl
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Shared logic: takes raw CSV text (from a file OR pasted directly) and
+  // tries to detect + parse it. Used by both the file picker and the paste
+  // box below, so they behave identically.
+  const processCSVText = (text: string) => {
+    if (!text || !text.trim()) {
+      triggerMessage("That looks empty - nothing to import.", true);
+      return;
+    }
+    try {
+      const result = autoDetectAndParseCSV(text);
+      if (result && result.state.books.length > 0) {
+        setParsedReport({
+          source: result.source,
+          booksCount: result.report.booksImported,
+          logsCount: result.report.logsImported,
+          reviewsCount: result.report.reviewsImported,
+          rawParsedState: result.state
+        });
+        triggerMessage(`Detected ${result.source === 'goodreads' ? 'Goodreads' : 'Bookmory'} CSV file. Ready to sync!`, false);
+      } else {
+        triggerMessage("Could not auto-detect Goodreads or Bookmory schemas. Ensure the CSV remains untempered.", true);
+      }
+    } catch (err) {
+      console.error(err);
+      triggerMessage("An error occurred during file ingestion analysis.", true);
+    }
+  };
+
   // Handler for Goodreads or Bookmory CSV uploads
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -277,33 +307,17 @@ export function SyncHub({ appState, onImportState, currentUserName, currentYearl
     const fileReader = new FileReader();
     fileReader.onload = (event) => {
       const text = event.target?.result as string;
-      if (!text) {
-        triggerMessage("The uploaded file corresponds to an empty format.", true);
-        return;
-      }
-
-      try {
-        const result = autoDetectAndParseCSV(text);
-        if (result && result.state.books.length > 0) {
-          setParsedReport({
-            source: result.source,
-            booksCount: result.report.booksImported,
-            logsCount: result.report.logsImported,
-            reviewsCount: result.report.reviewsImported,
-            rawParsedState: result.state
-          });
-          triggerMessage(`Detected ${result.source === 'goodreads' ? 'Goodreads' : 'Bookmory'} CSV file. Ready to sync!`, false);
-        } else {
-          // Let's do a helpful generic CSV parsing warning
-          triggerMessage("Could not auto-detect Goodreads or Bookmory schemas. Ensure the CSV remains untempered.", true);
-        }
-      } catch (err) {
-        console.error(err);
-        triggerMessage("An error occurred during file ingestion analysis.", true);
-      }
+      processCSVText(text);
     };
     fileReader.readAsText(files[0]);
     if (csvInputRef.current) csvInputRef.current.value = '';
+  };
+
+  // Handler for the "paste CSV text" fallback box
+  const handlePastedCSVSubmit = () => {
+    processCSVText(pastedCSV);
+    setPastedCSV('');
+    setShowPasteBox(false);
   };
 
   // Goodreads compatible library CSV export
@@ -923,9 +937,36 @@ CREATE POLICY "Allow anonymous full access" ON savestate_vault FOR ALL USING (tr
                   type="file"
                   ref={csvInputRef}
                   onChange={handleCSVUpload}
-                  accept=".csv,.txt"
+                  accept="*/*"
                   className="hidden"
                 />
+                <button
+                  onClick={() => setShowPasteBox(prev => !prev)}
+                  className="w-full mt-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-transparent border border-app-border hover:border-brand-purple/50 text-[var(--color-text-muted)] hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  <FileText size={12} /> {showPasteBox ? 'Hide paste box' : "Can't pick a file? Paste it instead"}
+                </button>
+                {showPasteBox && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-[9.5px] text-[var(--color-text-muted)] leading-relaxed font-sans">
+                      On your phone: open the CSV file (or open it in the Files app), select all the text, copy it, then paste it below.
+                    </p>
+                    <textarea
+                      value={pastedCSV}
+                      onChange={(e) => setPastedCSV(e.target.value)}
+                      placeholder="Paste your exported CSV text here..."
+                      rows={5}
+                      className="w-full bg-app-base border border-app-border rounded-md p-2 text-[10px] text-white font-mono focus:outline-hidden focus:border-brand-purple"
+                    />
+                    <button
+                      onClick={() => handlePastedCSVSubmit()}
+                      disabled={!pastedCSV.trim()}
+                      className="w-full py-2 rounded-lg bg-brand-purple disabled:opacity-40 disabled:cursor-not-allowed text-[#340F04] font-extrabold text-[10.5px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Parse Pasted Text
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
