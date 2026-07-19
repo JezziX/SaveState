@@ -53,6 +53,93 @@ const DEFAULT_REVIEWS: BookReview[] = [
   }
 ];
 
+// ---------------------------------------------------------------------------
+// Database <-> App data mapping
+//
+// The `media_items` table in Supabase uses its own column names (snake_case,
+// and a couple of names that differ from the app's field names entirely -
+// e.g. the app calls it "author"/"coverUrl", the table calls it
+// "creator"/"cover_url"). These two functions are the ONLY place that
+// translation should happen, so every save and every load goes through the
+// same rules and can never drift out of sync with each other.
+// ---------------------------------------------------------------------------
+
+const computeStatus = (didNotFinish?: boolean, startDate?: string, endDate?: string) => {
+  if (didNotFinish) return 'dnf';
+  if (endDate) return 'completed';
+  if (startDate) return 'active';
+  return 'backlog';
+};
+
+// Takes a Book or MediaItem from app state and turns it into exactly the
+// shape the `media_items` table expects.
+const toDbRow = (item: any, mediaType: string, userId: string) => ({
+  id: item.id,
+  user_id: userId,
+  title: item.title || '',
+  media_type: mediaType,
+  status: computeStatus(item.didNotFinish, item.startDate, item.endDate),
+  start_date: item.startDate || null,
+  finish_date: item.endDate || null,
+  creator: item.author || item.creator || null,
+  cover_url: item.coverUrl || null,
+  release_year: item.publishYear || item.releaseYear || null,
+  pages: item.pages || null,
+  description: item.description || null,
+  subjects: item.subjects || null,
+  isbn: item.isbn || null,
+  genre: item.genre || null,
+  did_not_finish: !!item.didNotFinish,
+  current_progress: item.currentProgress != null ? String(item.currentProgress) : null,
+  total_length: item.totalLength != null ? String(item.totalLength) : null,
+  rating: item.rating ?? null,
+  overview: item.overview || null,
+  cast: item.cast || null,
+  episodes: item.episodes || null,
+});
+
+// Takes a raw row back out of `media_items` and turns it into a Book.
+const fromDbRowToBook = (row: any): Book => ({
+  id: row.id,
+  title: row.title || '',
+  author: row.creator || '',
+  coverUrl: row.cover_url || '',
+  publishYear: row.release_year || undefined,
+  pages: row.pages || undefined,
+  description: row.description || undefined,
+  subjects: row.subjects || undefined,
+  isbn: row.isbn || undefined,
+  startDate: row.start_date || undefined,
+  endDate: row.finish_date || undefined,
+  didNotFinish: row.did_not_finish || false,
+  genre: row.genre || undefined,
+  type: 'book',
+  currentProgress: row.current_progress || undefined,
+  totalLength: row.total_length || undefined,
+});
+
+// Takes a raw row back out of `media_items` and turns it into a MediaItem
+// (movie / tv / podcast).
+const fromDbRowToMediaItem = (row: any): MediaItem => ({
+  id: row.id,
+  type: row.media_type,
+  title: row.title || '',
+  creator: row.creator || '',
+  coverUrl: row.cover_url || '',
+  releaseYear: row.release_year || undefined,
+  description: row.description || undefined,
+  genre: row.genre || undefined,
+  startDate: row.start_date || undefined,
+  endDate: row.finish_date || undefined,
+  didNotFinish: row.did_not_finish || false,
+  rating: row.rating ?? undefined,
+  overview: row.overview || undefined,
+  cast: row.cast || undefined,
+  episodes: row.episodes || undefined,
+  currentProgress: row.current_progress || undefined,
+  totalLength: row.total_length || undefined,
+});
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -113,57 +200,91 @@ export default function App() {
         supabase.from('save_points').select('*').eq('user_id', userId),
         supabase.from('public_reviews').select('*').eq('user_id', userId)
       ]);
-      
+
+      if (mediaRes.error) console.error('Failed to load media_items:', mediaRes.error.message);
+      if (spRes.error) console.error('Failed to load save_points:', spRes.error.message);
+      if (revRes.error) console.error('Failed to load public_reviews:', revRes.error.message);
+
       if (mediaRes.data) {
-        const cloudBooks = mediaRes.data.filter((m: any) => m.type === 'book');
-        const cloudMedia = mediaRes.data.filter((m: any) => m.type !== 'book');
-        if (cloudBooks.length > 0) {
-          setBooks(cloudBooks as any);
-          const newLogs: ReadingLog[] = [];
-          cloudBooks.forEach((b: any) => {
-            const status = b.didNotFinish ? 'dnf' : (b.endDate ? 'completed' : (b.startDate ? 'active' : 'backlog'));
-            if (status === 'active' || status === 'completed' || status === 'dnf') {
-              newLogs.push({
-                id: `log_${b.id}`,
-                bookId: b.id,
-                startDate: b.startDate,
-                endDate: b.endDate || '',
-                status
-              });
-            }
-          });
-          setReadingLogs(newLogs);
-        }
-        if (cloudMedia.length > 0) {
-          setMediaItems(cloudMedia as any);
-          // could do similar for mediaLogs here
-        }
+        const cloudBookRows = mediaRes.data.filter((m: any) => m.media_type === 'book');
+        const cloudMediaRows = mediaRes.data.filter((m: any) => m.media_type !== 'book');
+
+        const cloudBooks = cloudBookRows.map(fromDbRowToBook);
+        setBooks(cloudBooks);
+
+        const newLogs: ReadingLog[] = [];
+        cloudBookRows.forEach((row: any) => {
+          const status = row.status || computeStatus(row.did_not_finish, row.start_date, row.finish_date);
+          if (status === 'active' || status === 'completed' || status === 'dnf') {
+            newLogs.push({
+              id: `log_${row.id}`,
+              bookId: row.id,
+              startDate: row.start_date || undefined,
+              endDate: row.finish_date || '',
+              status
+            });
+          }
+        });
+        setReadingLogs(newLogs);
+
+        const cloudMedia = cloudMediaRows.map(fromDbRowToMediaItem);
+        setMediaItems(cloudMedia);
+
+        const newMediaLogs: MediaLog[] = [];
+        cloudMediaRows.forEach((row: any) => {
+          const status = row.status || computeStatus(row.did_not_finish, row.start_date, row.finish_date);
+          if (status === 'active' || status === 'completed' || status === 'dnf') {
+            newMediaLogs.push({
+              id: `media_log_${row.id}`,
+              mediaId: row.id,
+              startDate: row.start_date || undefined,
+              endDate: row.finish_date || '',
+              status
+            });
+          }
+        });
+        setMediaLogs(newMediaLogs);
       }
-      if (spRes.data && spRes.data.length > 0) {
+
+      if (spRes.data) {
         setSavePoints(spRes.data as any);
       }
-      if (revRes.data && revRes.data.length > 0) {
-        const newReviews = revRes.data.map((r: any) => ({
-          bookId: r.media_id,
-          rating: r.rating,
-          notes: r.review_text,
-          quotes: r.quotes || [],
-          updatedAt: r.updated_at
-        }));
-        setReviews(newReviews);
+
+      if (revRes.data) {
+        const bookReviews: BookReview[] = [];
+        const mediaReviewsList: MediaReview[] = [];
+        revRes.data.forEach((r: any) => {
+          const mapped = {
+            rating: r.rating,
+            notes: r.review_text,
+            quotes: r.quotes || [],
+            updatedAt: r.updated_at
+          };
+          if (r.media_type === 'book') {
+            bookReviews.push({ ...mapped, bookId: r.media_id });
+          } else {
+            mediaReviewsList.push({ ...mapped, mediaId: r.media_id });
+          }
+        });
+        setReviews(bookReviews);
+        setMediaReviews(mediaReviewsList);
       }
-      
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (profileData) {
-        if (profileData.yearly_goal) {
-          setYearlyGoal(profileData.yearly_goal);
-        }
-        if (profileData.display_name) {
-          setUserName(profileData.display_name);
-        }
-        if (profileData.avatar_url) {
-          setUserAvatar(profileData.avatar_url);
-        }
+
+      // Load the profile row. maybeSingle() (instead of single()) means a
+      // missing row comes back as `null` instead of throwing a 406 error.
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles').select('*').eq('id', userId).maybeSingle();
+
+      if (profileError) {
+        console.error('Failed to load profile:', profileError.message);
+      } else if (!profileData) {
+        // First time we've seen this account - create its profile row now.
+        const { error: createError } = await supabase.from('profiles').upsert({ id: userId });
+        if (createError) console.error('Failed to create profile row:', createError.message);
+      } else {
+        if (profileData.yearly_goal) setYearlyGoal(profileData.yearly_goal);
+        if (profileData.display_name) setUserName(profileData.display_name);
+        if (profileData.avatar_url) setUserAvatar(profileData.avatar_url);
       }
     } catch (e) {
       console.error('Failed to sync from cloud', e);
@@ -174,21 +295,45 @@ export default function App() {
 
   const pushMediaItem = async (item: any, type: string) => {
     if (!session) return;
+    setIsAutosaving(true);
     try {
-      await supabase.from('media_items').upsert({ user_id: session.user.id, type, ...item });
-    } catch (e) {
-      console.error(e);
+      const row = toDbRow(item, type, session.user.id);
+      const { error } = await supabase.from('media_items').upsert(row);
+      if (error) {
+        console.error('Failed to save to cloud:', error.message, error.details, error.hint);
+        setAutosaveStatus(`Save failed: ${error.message}`);
+      } else {
+        setAutosaveStatus('Saved just now');
+      }
+    } catch (e: any) {
+      console.error('Failed to save to cloud:', e);
+      setAutosaveStatus('Save failed - see console');
+    } finally {
+      setIsAutosaving(false);
     }
   };
 
-  
-  const pushReview = async (review: BookReview, bookTitle: string, bookCover: string) => {
+  const deleteMediaItemFromCloud = async (id: string) => {
     if (!session) return;
     try {
-      await supabase.from('public_reviews').upsert({
+      const { error } = await supabase.from('media_items').delete().eq('id', id).eq('user_id', session.user.id);
+      if (error) console.error('Failed to delete from cloud:', error.message);
+      // Best-effort: also remove any public review tied to this item so a
+      // deleted book/media doesn't leave an orphaned review behind.
+      await supabase.from('public_reviews').delete().eq('media_id', id).eq('user_id', session.user.id);
+    } catch (e) {
+      console.error('Failed to delete from cloud:', e);
+    }
+  };
+
+  const pushReview = async (review: BookReview, bookTitle: string, bookCover: string, mediaType: string = 'book') => {
+    if (!session) return;
+    try {
+      const { error } = await supabase.from('public_reviews').upsert({
         id: session.user.id + '_' + review.bookId,
         user_id: session.user.id,
         media_id: review.bookId,
+        media_type: mediaType,
         media_title: bookTitle,
         media_cover_url: bookCover,
         rating: review.rating,
@@ -196,26 +341,50 @@ export default function App() {
         quotes: review.quotes || [],
         updated_at: new Date().toISOString()
       });
+      if (error) console.error('Failed to save review to cloud:', error.message, error.details, error.hint);
     } catch (e) {
-      console.error(e);
+      console.error('Failed to save review to cloud:', e);
+    }
+  };
+
+  const pushMediaReview = async (review: MediaReview, mediaTitle: string, mediaCover: string, mediaType: string) => {
+    if (!session) return;
+    try {
+      const { error } = await supabase.from('public_reviews').upsert({
+        id: session.user.id + '_' + review.mediaId,
+        user_id: session.user.id,
+        media_id: review.mediaId,
+        media_type: mediaType,
+        media_title: mediaTitle,
+        media_cover_url: mediaCover,
+        rating: review.rating,
+        review_text: review.notes,
+        quotes: review.quotes || [],
+        updated_at: new Date().toISOString()
+      });
+      if (error) console.error('Failed to save media review to cloud:', error.message, error.details, error.hint);
+    } catch (e) {
+      console.error('Failed to save media review to cloud:', e);
     }
   };
 
   const pushSavePoint = async (sp: any) => {
     if (!session) return;
     try {
-      await supabase.from('save_points').upsert({ user_id: session.user.id, ...sp });
+      const { error } = await supabase.from('save_points').upsert({ user_id: session.user.id, ...sp });
+      if (error) console.error('Failed to save save-point to cloud:', error.message, error.details, error.hint);
     } catch (e) {
-      console.error(e);
+      console.error('Failed to save save-point to cloud:', e);
     }
   };
 
   const pushGoal = async (goal: number) => {
     if (!session) return;
     try {
-      await supabase.from('profiles').upsert({ id: session.user.id, yearly_goal: goal });
+      const { error } = await supabase.from('profiles').upsert({ id: session.user.id, yearly_goal: goal });
+      if (error) console.error('Failed to save goal to cloud:', error.message);
     } catch (e) {
-      console.error(e);
+      console.error('Failed to save goal to cloud:', e);
     }
   };
 
@@ -360,6 +529,7 @@ export default function App() {
     setReadingLogs(prev => prev.filter(log => log.bookId !== bookId));
     setReviews(prev => prev.filter(rev => rev.bookId !== bookId));
     if (selectedBookId === bookId) setSelectedBookId(null);
+    deleteMediaItemFromCloud(bookId);
   };
 
   const handleUpdateBook = (updatedBook: Book) => {
@@ -413,12 +583,14 @@ export default function App() {
       }
       return [...prev, item];
     });
+    pushMediaItem(item, item.type);
   };
 
   const handleRemoveMediaItem = (id: string) => {
     setMediaItems(prev => prev.filter(m => m.id !== id));
     setMediaLogs(prev => prev.filter(l => l.mediaId !== id));
     setMediaReviews(prev => prev.filter(r => r.mediaId !== id));
+    deleteMediaItemFromCloud(id);
   };
 
   const handleSaveMediaReview = (updatedReview: MediaReview) => {
@@ -431,6 +603,10 @@ export default function App() {
       }
       return [...prev, updatedReview];
     });
+    const item = mediaItems.find(m => m.id === updatedReview.mediaId);
+    if (item) {
+      pushMediaReview(updatedReview, item.title, item.coverUrl, item.type);
+    }
   };
 
   const handleAddMediaLog = (newLogInput: Omit<MediaLog, 'id'>) => {
@@ -439,6 +615,22 @@ export default function App() {
       id: `media_log_${Date.now()}`,
     };
     setMediaLogs(prev => [...prev, newLog]);
+
+    // Mirror the book pattern: reflect the log's dates/status back onto the
+    // media item itself, and push that to the cloud so it actually saves.
+    setMediaItems(prev => {
+      const next = [...prev];
+      const idx = next.findIndex(m => m.id === newLog.mediaId);
+      if (idx > -1) {
+        const item = { ...next[idx] };
+        item.startDate = newLog.startDate;
+        item.endDate = newLog.endDate;
+        item.didNotFinish = newLog.status === 'dnf';
+        next[idx] = item;
+        pushMediaItem(item, item.type);
+      }
+      return next;
+    });
   };
 
   const handleRemoveMediaLog = (logId: string) => {
