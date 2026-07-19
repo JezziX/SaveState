@@ -313,59 +313,6 @@ export default function App() {
     localStorage.setItem('bt_preferences', JSON.stringify(preferences));
   }, [preferences]);
 
-  // Immediate/Debounced autosave effect that triggers EACH time a change is made
-  useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
-      const code = localStorage.getItem('bt_supabase_sync_code');
-      // Always show local autosave indicator
-      setIsAutosaving(true);
-      setAutosaveStatus('Autosaving local state...');
-
-      if (!code || !code.trim() || !code.startsWith('savestate-')) {
-        // No remote code set, indicate local save
-        setTimeout(() => {
-          setIsAutosaving(false);
-          setAutosaveStatus('Local Autosaved');
-          setTimeout(() => setAutosaveStatus(''), 2500);
-        }, 800);
-        return;
-      }
-
-      setAutosaveStatus('Cloud Syncing...');
-      try {
-        const payload = {
-          sync_code: code.trim().toLowerCase(),
-          user_name: userName || '',
-          yearly_goal: yearlyGoal || 12,
-          books: books,
-          reading_logs: readingLogs,
-          reviews: reviews,
-          updated_at: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-          .from('savestate_vault')
-          .upsert(payload);
-
-        if (error) {
-          console.warn("Autosave sync failed:", error.message);
-          setAutosaveStatus('Local autosaved (Cloud Sync Error)');
-        } else {
-          const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          setAutosaveStatus(`Synced to Cloud: ${nowStr}`);
-          localStorage.setItem('bt_supabase_last_sync', new Date().toISOString());
-        }
-      } catch (err: any) {
-        setAutosaveStatus('Local autosaved');
-      } finally {
-        setIsAutosaving(false);
-        setTimeout(() => setAutosaveStatus(''), 4000);
-      }
-    }, 800);
-
-    return () => clearTimeout(delayDebounce);
-  }, [books, readingLogs, reviews, userName, yearlyGoal]);
-
   // Calculations/Stats
   const currentYear = new Date().getFullYear();
   
@@ -689,7 +636,7 @@ export default function App() {
                 <div className="flex items-center gap-2 group/name pl-1 md:pl-0">
                   <img src="/icon-512.png" alt="SaveState Logo" className="w-10 h-10 object-cover rounded-md" />
                   <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
-                    {userName ? `${userName}'s ` : ''}SaveState
+                    {userName ? `${userName}'s ` : 'My '}SaveState
                   </h1>
                 </div>
               </div>

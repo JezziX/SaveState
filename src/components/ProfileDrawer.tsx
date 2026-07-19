@@ -18,6 +18,7 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
 
   // Form State
   const [displayName, setDisplayName] = useState('');
+  const [handle, setHandle] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [activeSkin, setActiveSkin] = useState('');
@@ -44,6 +45,7 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
       if (data) {
         setProfile(data);
         setDisplayName(data.display_name || '');
+        setHandle(data.handle || '');
         setBio(data.bio || '');
         setAvatarUrl(data.avatar_url || '');
         setActiveSkin(data.active_skin || 'jx');
@@ -62,6 +64,7 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
       const updates = {
         id: session.user.id,
         display_name: displayName,
+        handle: handle,
         bio: bio,
         avatar_url: avatarUrl,
         active_skin: activeSkin,
@@ -134,6 +137,20 @@ export function ProfileDrawer({ isOpen, onClose, session, onProfileUpdate }: Pro
                     placeholder="Your public name"
                     className="w-full bg-black/40 border border-app-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-purple transition-all"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Username Handle</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[var(--color-text-muted)] font-mono">@</span>
+                    <input
+                      type="text"
+                      value={handle}
+                      onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      placeholder="username"
+                      className="w-full bg-black/40 border border-app-border rounded-lg pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-purple transition-all font-mono"
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-1.5">

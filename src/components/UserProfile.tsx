@@ -15,6 +15,9 @@ export function UserProfile({ userId, onBack }: UserProfileProps) {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
 
   // Fallback to mock data if cloud fails
   const mockUser = MOCK_USERS.find(u => u.id === userId);
@@ -58,10 +61,14 @@ export function UserProfile({ userId, onBack }: UserProfileProps) {
 
   // Use real data if available, fallback to mock data
   const displayName = profile?.display_name || mockUser?.displayName || 'Anonymous Reader';
+  const handle = profile?.handle || mockUser?.displayName?.toLowerCase().replace(/\s/g, '') || 'reader';
   const avatarUrl = profile?.avatar_url || mockUser?.avatarUrl || '/icon-512.png';
   const bio = profile?.bio || mockUser?.bio || 'No bio provided.';
   const unlockedBadges = profile?.unlocked_badges || mockUser?.badges || [];
   const activeSkin = profile?.active_skin || 'jx';
+  
+  const followersCount = profile?.followers_count || Math.floor(Math.random() * 100) + 10;
+  const followingCount = profile?.following_count || Math.floor(Math.random() * 50) + 5;
   
   // Calculate Level and Points
   const booksReadCount = mockUser?.booksRead || (profile as any)?.books_read || 0;
@@ -117,6 +124,7 @@ export function UserProfile({ userId, onBack }: UserProfileProps) {
 
           <div className="flex-1 text-center sm:text-left">
             <h2 className="text-2xl font-black text-[var(--color-text-main)] font-display">{displayName}</h2>
+            <p className="text-sm font-mono text-brand-purple/80 mb-2">@{handle}</p>
             <div className="flex items-center justify-center sm:justify-start gap-2 mt-1">
               <span className={`text-[10px] font-bold uppercase tracking-wider ${levelInfo.color}`}>
                 Lvl {levelInfo.level} · {levelInfo.title}
@@ -125,6 +133,15 @@ export function UserProfile({ userId, onBack }: UserProfileProps) {
             
             <p className="text-xs text-[var(--color-text-muted)] mt-3 max-w-sm mx-auto sm:mx-0 leading-relaxed">{bio}</p>
             
+            <div className="flex items-center justify-center sm:justify-start gap-4 mt-3">
+              <button onClick={() => { setActiveTab('followers'); setShowFollowersModal(true); }} className="text-xs text-[var(--color-text-main)] hover:text-brand-purple transition-colors cursor-pointer flex gap-1.5 items-center">
+                <span className="font-bold">{followersCount}</span> <span className="text-[var(--color-text-muted)]">Followers</span>
+              </button>
+              <button onClick={() => { setActiveTab('following'); setShowFollowersModal(true); }} className="text-xs text-[var(--color-text-main)] hover:text-brand-purple transition-colors cursor-pointer flex gap-1.5 items-center">
+                <span className="font-bold">{followingCount}</span> <span className="text-[var(--color-text-muted)]">Following</span>
+              </button>
+            </div>
+
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
               {unlockedBadges.map((badge: string) => (
                 <span key={badge} className="px-2 py-1 bg-brand-purple/10 border border-brand-purple/30 text-brand-purple text-[9px] font-bold uppercase tracking-wider rounded-md">
@@ -279,6 +296,48 @@ export function UserProfile({ userId, onBack }: UserProfileProps) {
           </div>
         </div>
       </div>
+
+      {/* Followers/Following Modal */}
+      {showFollowersModal && (
+        <>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => setShowFollowersModal(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-app-card border border-app-border rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="flex border-b border-app-border">
+              <button 
+                onClick={() => setActiveTab('followers')}
+                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'followers' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-[var(--color-text-muted)] hover:text-white'}`}
+              >
+                Followers
+              </button>
+              <button 
+                onClick={() => setActiveTab('following')}
+                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'following' ? 'text-brand-purple border-b-2 border-brand-purple' : 'text-[var(--color-text-muted)] hover:text-white'}`}
+              >
+                Following
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {MOCK_USERS.slice(0, activeTab === 'followers' ? 5 : 3).map((u, i) => (
+                <div key={u.id} className="flex items-center gap-3">
+                  <img src={u.avatarUrl} alt={u.displayName} className="w-10 h-10 rounded-full border border-app-border object-cover bg-app-base" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-bold text-white truncate">{u.displayName}</h4>
+                    <p className="text-[10px] text-[var(--color-text-muted)] font-mono truncate">@{u.displayName.toLowerCase().replace(/\s/g, '')}</p>
+                  </div>
+                  <button className="px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-brand-purple text-brand-purple hover:bg-brand-purple hover:text-[#340F04] transition-colors shrink-0">
+                    {i % 2 === 0 ? 'Following' : 'Follow'}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t border-app-border bg-black/20">
+              <button onClick={() => setShowFollowersModal(false)} className="w-full py-2 rounded-lg bg-app-base border border-app-border text-xs font-bold text-white hover:bg-white/5 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

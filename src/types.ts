@@ -95,10 +95,13 @@ export interface UserProfile {
   id: string;
   email: string;
   display_name: string;
+  handle?: string;
   bio: string;
   avatar_url: string;
   active_skin: string;
   yearly_goal: number;
+  followers_count?: number;
+  following_count?: number;
 }
 
 export interface SocialUser {
