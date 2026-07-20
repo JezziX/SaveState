@@ -3,6 +3,8 @@ import { Book, ReadingLog, BookReview, SavePoint } from '../types';
 import { Save } from 'lucide-react';
 import { Star, Bookmark, ChevronDown, X, CheckCircle2, BookOpen, Trash2, Search, SlidersHorizontal, Grid, Columns, List, ArrowUpDown, Quote, Check } from 'lucide-react';
 import { motion } from 'motion/react';
+import { supabase } from '../utils/supabaseClient';
+import { upsertQuote } from '../utils/quotesApi';
 
 // Unified helper to fallback to styled Unsplash covers in case Open Library or other URLs fail
 export const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, title: string) => {
@@ -23,7 +25,6 @@ interface MyLibraryProps {
   onSelectBook: (bookId: string) => void;
   onRemoveBook: (bookId: string) => void;
   onUpdateBook?: (book: Book) => void;
-  onSaveReview?: (review: BookReview) => void;
   onBatchRemoveBooks?: (bookIds: string[]) => void;
   onBatchUpdateBooks?: (updatedBooks: Book[]) => void;
   onAddReadingLog?: (log: Omit<ReadingLog, 'id'>) => void;
@@ -49,7 +50,6 @@ export function MyLibrary({
   onSelectBook,
   onRemoveBook,
   onUpdateBook,
-  onSaveReview,
   onBatchRemoveBooks,
   onBatchUpdateBooks,
   onAddReadingLog,
@@ -165,27 +165,24 @@ export function MyLibrary({
     setShowBatchDeleteConfirm(false);
   };
 
-  const handleSaveQuickQuote = (bookId: string, text: string) => {
-    const activeReview = reviews.find(r => r.bookId === bookId);
-    const updatedReview: BookReview = activeReview 
-      ? {
-          ...activeReview,
-          quotes: [...(activeReview.quotes || []), text],
-          updatedAt: new Date().toISOString()
-        }
-      : {
-          bookId,
-          rating: 0,
-          notes: '',
-          quotes: [text],
-          updatedAt: new Date().toISOString()
-        };
+  const handleSaveQuickQuote = async (bookId: string, text: string) => {
+    const book = books.find(b => b.id === bookId);
+    if (!book || !text.trim()) return;
 
-    if (onSaveReview) {
-      onSaveReview(updatedReview);
-    }
-    
-    setQuoteSuccessMsg('Snippet linked and synced to the Quote Deck!');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    await upsertQuote({
+      id: `quote-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      quote: text.trim(),
+      author: book.author,
+      source: book.title,
+      coverUrl: book.coverUrl,
+      isPublic: true, // quotes are public by default, like a review - user can flip it privately from the Quotes page
+      createdAt: new Date().toISOString(),
+    }, session.user.id);
+
+    setQuoteSuccessMsg('Snippet saved to your Quote Deck!');
     setEnteredQuoteText('');
     setTimeout(() => {
       setQuoteSuccessMsg(null);

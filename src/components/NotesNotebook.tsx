@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Book, BookReview } from '../types';
-import { BookOpen, Star, Save, Search, Calendar, ChevronRight } from 'lucide-react';
+import { Book } from '../types';
+import { BookOpen, Save, Search, Calendar, ChevronRight, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface NotesNotebookProps {
   books: Book[];
-  reviews: BookReview[];
-  onSaveReview: (review: BookReview) => void;
+  onUpdateBook: (book: Book) => void;
 }
 
-export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookProps) {
+// This is the private "SaveState" journal - a checkpoint of notes per book,
+// completely separate from the public Reviews feature. Nothing written here
+// is ever pushed anywhere public.
+export function NotesNotebook({ books, onUpdateBook }: NotesNotebookProps) {
   const [selectedBookId, setSelectedBookId] = useState<string>(books[0]?.id || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [successSaved, setSuccessSaved] = useState(false);
@@ -23,33 +25,22 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
 
   // Get active book note
   const activeBook = books.find(b => b.id === selectedBookId) || books[0];
-  const activeReview = reviews.find(r => r.bookId === activeBook?.id);
 
   // Note form state local buffer
-  const [noteText, setNoteText] = useState(activeReview?.notes || '');
-  const [noteRating, setNoteRating] = useState(activeReview?.rating || 0);
-  const [quoteInput, setQuoteInput] = useState('');
-  const [quoteList, setQuoteList] = useState<string[]>(activeReview?.quotes || []);
+  const [noteText, setNoteText] = useState(activeBook?.notes || '');
 
   // Sync state when active book changes
   React.useEffect(() => {
     if (activeBook) {
-      const rev = reviews.find(r => r.bookId === activeBook.id);
-      setNoteText(rev?.notes || '');
-      setNoteRating(rev?.rating || 0);
-      setQuoteList(rev?.quotes || []);
-      setQuoteInput('');
+      setNoteText(activeBook.notes || '');
     }
-  }, [selectedBookId, activeBook, reviews]);
+  }, [selectedBookId, activeBook]);
 
   const handleSave = () => {
     if (!activeBook) return;
-    onSaveReview({
-      bookId: activeBook.id,
-      rating: noteRating,
+    onUpdateBook({
+      ...activeBook,
       notes: noteText,
-      quotes: quoteList,
-      updatedAt: new Date().toISOString(),
     });
 
     setSuccessSaved(true);
@@ -68,9 +59,6 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
 
   const [notebookSortBy, setNotebookSortBy] = useState<'year' | 'month' | 'genre' | 'title' | 'author'>('title');
   const [notebookSortOrder, setNotebookSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const [editingQuoteIdx, setEditingQuoteIdx] = useState<number | null>(null);
-  const [editingQuoteText, setEditingQuoteText] = useState('');
 
   const filteredBooks = books.filter(b => {
     const query = searchQuery.toLowerCase();
@@ -121,8 +109,13 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
             <BookOpen size={16} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-[var(--color-text-main)] font-display uppercase tracking-wider">Save Points</h2>
-            <p className="text-[11px] text-[var(--color-text-muted)]">Navigate and edit detailed memoirs and reading thoughts</p>
+            <h2 className="text-sm font-semibold text-[var(--color-text-main)] font-display uppercase tracking-wider flex items-center gap-2">
+              SaveState
+              <span className="flex items-center gap-1 text-[8.5px] font-mono font-bold uppercase tracking-widest text-[var(--color-text-muted)] bg-black/30 border border-app-border px-1.5 py-0.5 rounded">
+                <Lock size={9} /> Private
+              </span>
+            </h2>
+            <p className="text-[11px] text-[var(--color-text-muted)]">Your private checkpoint notes - only visible to you, never shared publicly</p>
           </div>
         </div>
       </div>
@@ -134,7 +127,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
             {/* Table of contents title */}
             <div className="border-b border-app-border pb-4 mb-4">
               <h3 className="font-display font-black text-xs uppercase tracking-widest text-brand-purple mb-3">Index</h3>
-              
+
               {/* Index search */}
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={12} />
@@ -142,7 +135,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Find save points..."
+                  placeholder="Find a SaveState..."
                   className="w-full bg-black/40 border border-app-border rounded-lg pl-8 pr-3 py-1.5 text-xs font-medium text-[var(--color-text-main)] placeholder-[var(--color-text-muted)] focus:outline-hidden focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/40 transition-all"
                 />
               </div>
@@ -177,7 +170,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
               {sortedBooks.length > 0 ? (
                 sortedBooks.map(book => {
                   const isSelected = book.id === selectedBookId;
-                  const hasNote = reviews.some(r => r.bookId === book.id && r.notes.trim().length > 0);
+                  const hasNote = !!(book.notes && book.notes.trim().length > 0);
                   const isDnf = book.didNotFinish;
 
                   return (
@@ -198,13 +191,13 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                           by {book.author}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-1.5 shrink-0">
                         {isDnf && (
                           <span className="text-[8px] px-1.5 py-0.5 rounded font-black uppercase bg-red-950/40 text-red-400">DNF</span>
                         )}
                         {hasNote && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-turquoise shadow-[0_0_8px_rgba(7,161,249,0.5)]" title="Has Save Points" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-turquoise shadow-[0_0_8px_rgba(7,161,249,0.5)]" title="Has a SaveState" />
                         )}
                         <ChevronRight size={12} className="opacity-40" />
                       </div>
@@ -222,7 +215,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
 
         {/* ACTIVE JOURNAL PAGE (RIGHT PAGE) */}
         <div className="col-span-1 md:col-span-8 flex flex-col justify-between max-h-[500px] bg-app-base relative">
-          
+
           <AnimatePresence mode="wait">
             {activeBook ? (
               <motion.div
@@ -241,23 +234,6 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                         {activeBook.title}
                       </h4>
                       <p className="text-sm font-bold text-[var(--color-text-muted)] mt-1">by {activeBook.author}</p>
-                    </div>
-                    {/* Compact rating stars */}
-                    <div className="flex items-center gap-1 bg-black/40 border border-app-border px-2.5 py-1.5 rounded-lg shrink-0">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => setNoteRating(i + 1)}
-                          className="cursor-pointer"
-                        >
-                          <Star
-                            size={14}
-                            fill={i < noteRating ? 'var(--color-brand-yellow)' : 'none'}
-                            className={i < noteRating ? 'text-brand-yellow' : 'text-gray-600'}
-                          />
-                        </button>
-                      ))}
                     </div>
                   </div>
 
@@ -294,139 +270,16 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                   <textarea
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Enter save points and thoughts..."
+                    placeholder="Write your SaveState - spoilers, theories, character notes, exactly where you left off..."
                     className="w-full h-full min-h-[140px] bg-transparent border-none outline-none leading-relaxed text-sm placeholder-[var(--color-text-muted)] focus:ring-0 custom-scrollbar resize-none text-[var(--color-text-main)] font-mono"
                     maxLength={2000}
                   />
                 </div>
 
-                {/* Highlights / Quote Deck section */}
-                <div className="mt-2 pt-4 border-t border-app-border mb-4">
-                  <label className="block text-[10px] uppercase font-bold tracking-wider mb-2 text-brand-purple font-mono">
-                    ✦ Saved Quotes for Deck ({quoteList.length})
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={quoteInput}
-                      onChange={(e) => setQuoteInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          if (quoteInput.trim()) {
-                            setQuoteList(prev => [...prev, quoteInput.trim()]);
-                            setQuoteInput('');
-                          }
-                        }
-                      }}
-                      placeholder="Enter quote..."
-                      className="flex-1 bg-black/40 border border-app-border rounded-lg px-3 py-1.5 text-xs text-[var(--color-text-main)] placeholder-[var(--color-text-muted)] focus:outline-hidden focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/40"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (quoteInput.trim()) {
-                          setQuoteList(prev => [...prev, quoteInput.trim()]);
-                          setQuoteInput('');
-                        }
-                      }}
-                      className="px-4 py-1.5 bg-[#141417] hover:bg-[#202027] border border-app-border rounded-lg text-xs font-bold font-mono transition-all active:scale-95 cursor-pointer text-[var(--color-text-main)]"
-                    >
-                      + Add
-                    </button>
-                  </div>
-
-                  {/* List of quotes */}
-                  {quoteList.length > 0 && (
-                    <div className="mt-3 space-y-1.5 max-h-[85px] overflow-y-auto custom-scrollbar pr-1">
-                      {quoteList.map((q, idx) => {
-                        const isEditingThis = editingQuoteIdx === idx;
-                        return (
-                          <div key={idx} className="flex items-center justify-between px-3 py-2 bg-black/30 border border-app-border rounded-lg text-[11px] font-mono italic gap-3">
-                            {isEditingThis ? (
-                               <input
-                                type="text"
-                                value={editingQuoteText}
-                                onChange={(e) => setEditingQuoteText(e.target.value)}
-                                className="flex-1 bg-black border border-brand-purple/50 rounded px-2 py-1 text-[11px] font-mono focus:outline-none text-[var(--color-text-main)]"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    if (editingQuoteText.trim()) {
-                                      const updatedList = [...quoteList];
-                                      updatedList[idx] = editingQuoteText.trim();
-                                      setQuoteList(updatedList);
-                                    }
-                                    setEditingQuoteIdx(null);
-                                  } else if (e.key === 'Escape') {
-                                    setEditingQuoteIdx(null);
-                                  }
-                                }}
-                                autoFocus
-                              />
-                            ) : (
-                              <span className="leading-snug text-[var(--color-text-main)] opacity-90">"{q}"</span>
-                            )}
-                            
-                            <div className="flex items-center gap-2 shrink-0">
-                              {isEditingThis ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (editingQuoteText.trim()) {
-                                        const updatedList = [...quoteList];
-                                        updatedList[idx] = editingQuoteText.trim();
-                                        setQuoteList(updatedList);
-                                      }
-                                      setEditingQuoteIdx(null);
-                                    }}
-                                    className="font-mono font-bold text-[9px] uppercase cursor-pointer text-brand-teal hover:text-brand-teal/80"
-                                  >
-                                    Done
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingQuoteIdx(null)}
-                                    className="font-mono font-bold text-[9px] uppercase cursor-pointer text-[var(--color-text-muted)] hover:text-white"
-                                  >
-                                    X
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingQuoteIdx(idx);
-                                      setEditingQuoteText(q);
-                                    }}
-                                    className="font-mono font-bold text-[9px] uppercase cursor-pointer text-brand-purple hover:text-brand-purple/80"
-                                  >
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setQuoteList(prev => prev.filter((_, i) => i !== idx))}
-                                    className="font-mono font-bold text-[9px] uppercase cursor-pointer text-[var(--color-text-muted)] hover:text-red-400"
-                                  >
-                                    Remove
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
                 {/* Note Actions */}
                 <div className="flex justify-between items-center border-t border-app-border pt-4 mt-auto">
-                  <span className="text-[10px] font-mono font-bold uppercase text-[var(--color-text-muted)]">
-                    {activeReview?.updatedAt
-                      ? `Last Saved: ${new Date(activeReview.updatedAt).toLocaleDateString()}`
-                      : 'Unwritten Note Entry'}
+                  <span className="text-[10px] font-mono font-bold uppercase text-[var(--color-text-muted)] flex items-center gap-1.5">
+                    <Lock size={10} /> Private - never shared
                   </span>
 
                   <button
@@ -434,7 +287,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                     className="flex items-center gap-2 px-5 py-2 bg-brand-purple text-[#340F04] hover:bg-brand-teal active:scale-95 text-xs font-black rounded-lg transition-all shadow-[0_0_15px_rgba(215,33,249,0.3)] cursor-pointer uppercase tracking-wider"
                   >
                     <Save size={14} />
-                    {successSaved ? 'Saved!' : 'Save Page Note'}
+                    {successSaved ? 'Saved!' : 'Save SaveState'}
                   </button>
                 </div>
               </motion.div>
@@ -443,7 +296,7 @@ export function NotesNotebook({ books, reviews, onSaveReview }: NotesNotebookPro
                 <BookOpen size={48} className="mb-4 opacity-20 text-brand-purple" />
                 <h4 className="font-display font-black text-sm uppercase text-[var(--color-text-main)]">Empty Journal</h4>
                 <p className="text-xs max-w-xs mt-2 leading-relaxed text-[var(--color-text-muted)]">
-                  Search and catalog books first to add handwritten memories and reviews.
+                  Search and catalog books first to add private SaveState notes.
                 </p>
               </div>
             )}
