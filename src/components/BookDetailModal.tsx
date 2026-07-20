@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Book, ReadingLog, BookReview } from '../types';
-import { X, Star, Calendar, Plus, Trash2, AlertCircle, Link, Edit3, Search as SearchIcon, Loader2, Sparkles, Check, ChevronLeft, ChevronRight, Share2, Lock, Globe } from 'lucide-react';
+import { X, Star, Calendar, Plus, Trash2, AlertCircle, Link, Edit3, Search as SearchIcon, Loader2, Sparkles, Check, ChevronLeft, ChevronRight, Share2, Lock, Globe, Quote as QuoteIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { handleImageError } from './MyLibrary';
 import { searchOpenLibrary } from '../utils/openlibrary';
 import { supabase } from '../utils/supabaseClient';
+import { upsertQuote } from '../utils/quotesApi';
 
 interface BookDetailModalProps {
   book: Book;
@@ -40,6 +41,17 @@ export function BookDetailModal({
   const [reviewIsPublic, setReviewIsPublic] = useState(review?.isPublic ?? true);
   const [saveStateText, setSaveStateText] = useState(book.notes || '');
   const [saveStateSuccess, setSaveStateSuccess] = useState(false);
+  const [detailSubTab, setDetailSubTab] = useState<'savestate' | 'review' | 'quotes'>('savestate');
+  const [quoteText, setQuoteText] = useState('');
+  const [quoteCharacter, setQuoteCharacter] = useState('');
+  const [quoteAdded, setQuoteAdded] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUserId(session.user.id);
+    });
+  }, []);
   const [activeTab, setActiveTab] = useState<'review' | 'community' | 'dates' | 'link'>('review');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -231,6 +243,24 @@ export function BookDetailModal({
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
+  const handleAddQuote = async () => {
+    if (!quoteText.trim() || !userId) return;
+    await upsertQuote({
+      id: `quote-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      quote: quoteText.trim(),
+      author: book.author,
+      source: book.title,
+      character: quoteCharacter.trim() || undefined,
+      coverUrl: book.coverUrl,
+      isPublic: true,
+      createdAt: new Date().toISOString(),
+    }, userId);
+    setQuoteText('');
+    setQuoteCharacter('');
+    setQuoteAdded(true);
+    setTimeout(() => setQuoteAdded(false), 2000);
+  };
+
   const handleAddLog = (e: React.FormEvent) => {
     e.preventDefault();
     if (logStatus === 'dnf') {
@@ -357,7 +387,7 @@ export function BookDetailModal({
                 : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
             }`}
           >
-            Notes
+            SaveState
           </button>
           <button
             onClick={() => setActiveTab('community')}
@@ -405,108 +435,184 @@ export function BookDetailModal({
           )}
 
           {activeTab === 'review' && (
-            <div className="space-y-5">
-              {/* PRIVATE SAVESTATE SECTION */}
-              <div className="space-y-1.5 bg-black/20 border border-app-border rounded-lg p-3.5">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 text-[9px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">
-                    <Lock size={10} /> SaveState (Private)
-                  </label>
-                  <span className="text-[8px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">Only visible to you</span>
-                </div>
-                <textarea
-                  value={saveStateText}
-                  onChange={(e) => setSaveStateText(e.target.value)}
-                  placeholder="Spoilers, theories, where you left off - just for you..."
-                  className="w-full bg-app-base border border-app-border rounded-lg p-3 text-xs text-gray-100 placeholder-gray-600 focus:outline-hidden focus:border-brand-purple min-h-[90px]"
-                  maxLength={2000}
-                />
-                <div className="flex justify-end">
+            <div className="space-y-4">
+              {/* SUB-TABS */}
+              <div className="flex gap-1.5 bg-black/20 border border-app-border rounded-lg p-1">
+                {([
+                  { key: 'savestate', label: 'SaveState', icon: Lock },
+                  { key: 'review', label: 'Review', icon: Globe },
+                  { key: 'quotes', label: 'Quotes', icon: QuoteIcon },
+                ] as const).map(t => (
                   <button
+                    key={t.key}
                     type="button"
-                    onClick={handleSaveSaveState}
-                    className="px-3 py-1.5 bg-app-card border border-app-border hover:border-brand-purple/50 text-[var(--color-text-main)] font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
+                    onClick={() => setDetailSubTab(t.key)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer ${
+                      detailSubTab === t.key
+                        ? 'bg-brand-purple/15 text-brand-purple'
+                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                    }`}
                   >
-                    {saveStateSuccess ? 'Saved!' : 'Save SaveState'}
+                    <t.icon size={11} /> {t.label}
                   </button>
-                </div>
+                ))}
               </div>
 
-              {/* PUBLIC REVIEW SECTION */}
-              <div className="space-y-1.5 bg-black/20 border border-app-border rounded-lg p-3.5">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="flex items-center gap-1.5 text-[9px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">
-                    <Globe size={10} /> Review
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setReviewIsPublic(prev => !prev)}
-                    className="flex items-center gap-1.5 text-[9px] font-black uppercase px-2 py-1 rounded-full cursor-pointer transition-colors"
-                    style={{
-                      backgroundColor: reviewIsPublic ? 'rgba(7,161,249,0.12)' : 'rgba(255,255,255,0.05)',
-                      color: reviewIsPublic ? 'var(--color-brand-turquoise, #07a1f9)' : 'var(--color-text-muted)'
-                    }}
-                  >
-                    {reviewIsPublic ? <Globe size={10} /> : <Lock size={10} />}
-                    {reviewIsPublic ? 'Public' : 'Only Me'}
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setRating(i + 1)}
-                      className="p-1 cursor-pointer transition-transform hover:scale-110"
-                    >
-                      <Star
-                        size={18}
-                        fill={i < rating ? '#CAB9D4' : 'none'}
-                        className={i < rating ? 'text-[#CAB9D4]' : 'text-gray-600'}
-                      />
-                    </button>
-                  ))}
-                  {rating > 0 && (
-                    <span className="text-[10px] font-bold text-[#CAB9D4] ml-2 bg-brand-purple/10 px-2.5 py-0.5 rounded border border-brand-purple/20">
-                      {rating} / 5 stars
-                    </span>
-                  )}
-                </div>
-
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={reviewIsPublic ? "Write a review anyone can see - your followers and other users browsing this book..." : "Write a review only you can see..."}
-                  className="w-full bg-app-base border border-app-border rounded-lg p-3 text-xs text-gray-100 placeholder-gray-600 focus:outline-hidden focus:border-brand-purple min-h-[100px] mt-2"
-                  maxLength={1200}
-                />
-
-                <div className="flex justify-between items-center pt-1 flex-wrap gap-2">
-                  <span className="text-[9px] text-[var(--color-text-muted)] font-bold">
-                    Last posted: {review?.updatedAt ? new Date(review.updatedAt).toLocaleDateString() : 'Never'}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {notes.trim().length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleMoveReviewToSaveState}
-                        title="Move this review's text into your private SaveState note instead"
-                        className="px-3 py-2 bg-transparent border border-app-border hover:border-brand-purple/50 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-bold text-[10px] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Lock size={11} /> Move to SaveState
-                      </button>
-                    )}
+              {/* SAVESTATE PANEL */}
+              {detailSubTab === 'savestate' && (
+                <div className="space-y-1.5 bg-black/20 border border-app-border rounded-lg p-3.5">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-[9px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">
+                      <Lock size={10} /> SaveState (Private)
+                    </label>
+                    <span className="text-[8px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">Only visible to you</span>
+                  </div>
+                  <textarea
+                    value={saveStateText}
+                    onChange={(e) => setSaveStateText(e.target.value)}
+                    placeholder="Spoilers, theories, where you left off - just for you..."
+                    className="w-full bg-app-base border border-app-border rounded-lg p-3 text-xs text-gray-100 placeholder-gray-600 focus:outline-hidden focus:border-brand-purple min-h-[140px]"
+                    maxLength={2000}
+                  />
+                  <div className="flex justify-end">
                     <button
                       type="button"
-                      onClick={handleSaveReview}
-                      className="px-4 py-2 bg-brand-purple hover:bg-[#d8c7df] text-[#340F04] font-extrabold text-xs rounded-lg transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                      onClick={handleSaveSaveState}
+                      className="px-3 py-1.5 bg-app-card border border-app-border hover:border-brand-purple/50 text-[var(--color-text-main)] font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
                     >
-                      <Share2 size={13} /> {reviewIsPublic ? 'Post Public Review' : 'Save Review (Only Me)'}
+                      {saveStateSuccess ? 'Saved!' : 'Save SaveState'}
                     </button>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* REVIEW PANEL */}
+              {detailSubTab === 'review' && (
+                <div className="space-y-1.5 bg-black/20 border border-app-border rounded-lg p-3.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="flex items-center gap-1.5 text-[9px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">
+                      <Globe size={10} /> Review
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setReviewIsPublic(prev => !prev)}
+                      className="flex items-center gap-1.5 text-[9px] font-black uppercase px-2 py-1 rounded-full cursor-pointer transition-colors"
+                      style={{
+                        backgroundColor: reviewIsPublic ? 'rgba(7,161,249,0.12)' : 'rgba(255,255,255,0.05)',
+                        color: reviewIsPublic ? 'var(--color-brand-turquoise, #07a1f9)' : 'var(--color-text-muted)'
+                      }}
+                    >
+                      {reviewIsPublic ? <Globe size={10} /> : <Lock size={10} />}
+                      {reviewIsPublic ? 'Public' : 'Only Me'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setRating(i + 1)}
+                        className="p-1 cursor-pointer transition-transform hover:scale-110"
+                      >
+                        <Star
+                          size={18}
+                          fill={i < rating ? '#CAB9D4' : 'none'}
+                          className={i < rating ? 'text-[#CAB9D4]' : 'text-gray-600'}
+                        />
+                      </button>
+                    ))}
+                    {rating > 0 && (
+                      <span className="text-[10px] font-bold text-[#CAB9D4] ml-2 bg-brand-purple/10 px-2.5 py-0.5 rounded border border-brand-purple/20">
+                        {rating} / 5 stars
+                      </span>
+                    )}
+                  </div>
+
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={reviewIsPublic ? "Write a review anyone can see - your followers and other users browsing this book..." : "Write a review only you can see..."}
+                    className="w-full bg-app-base border border-app-border rounded-lg p-3 text-xs text-gray-100 placeholder-gray-600 focus:outline-hidden focus:border-brand-purple min-h-[100px] mt-2"
+                    maxLength={1200}
+                  />
+
+                  <div className="flex justify-between items-center pt-1 flex-wrap gap-2">
+                    <span className="text-[9px] text-[var(--color-text-muted)] font-bold">
+                      Last posted: {review?.updatedAt ? new Date(review.updatedAt).toLocaleDateString() : 'Never'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {notes.trim().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleMoveReviewToSaveState}
+                          title="Move this review's text into your private SaveState note instead"
+                          className="px-3 py-2 bg-transparent border border-app-border hover:border-brand-purple/50 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-bold text-[10px] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Lock size={11} /> Move to SaveState
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleSaveReview}
+                        className="px-4 py-2 bg-brand-purple hover:bg-[#d8c7df] text-[#340F04] font-extrabold text-xs rounded-lg transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                      >
+                        <Share2 size={13} /> {reviewIsPublic ? 'Post Public Review' : 'Save Review (Only Me)'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QUOTES PANEL */}
+              {detailSubTab === 'quotes' && (
+                <div className="space-y-2.5 bg-black/20 border border-app-border rounded-lg p-3.5">
+                  <label className="flex items-center gap-1.5 text-[9px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider">
+                    <QuoteIcon size={10} /> Add a Quote
+                  </label>
+
+                  {/* Auto-filled attribution, read-only */}
+                  <div className="bg-app-base border border-app-border rounded-lg px-3 py-2 flex items-center justify-between">
+                    <div className="min-w-0">
+                      <span className="block text-[11px] font-bold text-[var(--color-text-main)] truncate">{book.title}</span>
+                      <span className="block text-[9px] text-[var(--color-text-muted)] truncate">by {book.author}</span>
+                    </div>
+                    <span className="text-[8px] font-mono uppercase text-[var(--color-text-muted)] shrink-0 ml-2">Auto-filled</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[8.5px] uppercase font-bold text-[var(--color-text-muted)] mb-1">Character (Optional)</label>
+                    <input
+                      type="text"
+                      value={quoteCharacter}
+                      onChange={(e) => setQuoteCharacter(e.target.value)}
+                      placeholder="Who said it, e.g. Julian"
+                      className="w-full bg-app-base border border-app-border text-white text-xs px-2.5 py-2 rounded focus:outline-none focus:border-brand-purple/60"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[8.5px] uppercase font-bold text-[var(--color-text-muted)] mb-1">Quote</label>
+                    <textarea
+                      value={quoteText}
+                      onChange={(e) => setQuoteText(e.target.value)}
+                      placeholder="Enter the quote..."
+                      className="w-full bg-app-base border border-app-border rounded-lg p-3 text-xs text-gray-100 placeholder-gray-600 focus:outline-hidden focus:border-brand-purple min-h-[80px]"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleAddQuote}
+                      disabled={!quoteText.trim()}
+                      className="px-4 py-2 bg-brand-purple hover:bg-[#d8c7df] disabled:opacity-40 disabled:cursor-not-allowed text-[#340F04] font-extrabold text-xs rounded-lg transition-colors cursor-pointer shadow-sm"
+                    >
+                      {quoteAdded ? 'Added!' : 'Add Quote'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -81,6 +81,7 @@ export interface Quote {
   quote: string;
   author?: string;
   source?: string;
+  character?: string; // Which character said it, if applicable
   coverUrl?: string;
   isPublic: boolean;
   createdAt: string;

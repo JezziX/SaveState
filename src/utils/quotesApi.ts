@@ -11,6 +11,7 @@ const fromDbRow = (row: any): Quote => ({
   quote: row.quote,
   author: row.author || undefined,
   source: row.source || undefined,
+  character: row.character || undefined,
   coverUrl: row.cover_url || undefined,
   isPublic: row.is_public !== false, // defaults to true if missing
   createdAt: row.created_at,
@@ -22,6 +23,7 @@ const toDbRow = (q: Quote, userId: string) => ({
   quote: q.quote,
   author: q.author || null,
   source: q.source || null,
+  character: q.character || null,
   cover_url: q.coverUrl || null,
   is_public: q.isPublic,
   created_at: q.createdAt,

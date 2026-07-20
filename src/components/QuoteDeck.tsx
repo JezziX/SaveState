@@ -32,6 +32,7 @@ export function QuoteDeck() {
   const [newQuoteText, setNewQuoteText] = useState('');
   const [newQuoteAuthor, setNewQuoteAuthor] = useState('');
   const [newQuoteSource, setNewQuoteSource] = useState('');
+  const [newQuoteCharacter, setNewQuoteCharacter] = useState('');
   const [newQuoteIsPublic, setNewQuoteIsPublic] = useState(true);
 
   // Editing state for cards
@@ -39,6 +40,7 @@ export function QuoteDeck() {
   const [editQuoteText, setEditQuoteText] = useState('');
   const [editQuoteAuthor, setEditQuoteAuthor] = useState('');
   const [editQuoteSource, setEditQuoteSource] = useState('');
+  const [editQuoteCharacter, setEditQuoteCharacter] = useState('');
   const [editQuoteIsPublic, setEditQuoteIsPublic] = useState(true);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -127,6 +129,7 @@ export function QuoteDeck() {
       quote: newQuoteText.trim(),
       author: newQuoteAuthor.trim() || undefined,
       source: newQuoteSource.trim() || undefined,
+      character: newQuoteCharacter.trim() || undefined,
       isPublic: newQuoteIsPublic,
       createdAt: new Date().toISOString(),
     };
@@ -136,6 +139,7 @@ export function QuoteDeck() {
     setNewQuoteText('');
     setNewQuoteAuthor('');
     setNewQuoteSource('');
+    setNewQuoteCharacter('');
     setNewQuoteIsPublic(true);
     setIsAddingQuote(false);
     setCurrentIndex(0); // View immediately
@@ -147,6 +151,7 @@ export function QuoteDeck() {
     setEditQuoteText(activeQuote.quote);
     setEditQuoteAuthor(activeQuote.author || '');
     setEditQuoteSource(activeQuote.source || '');
+    setEditQuoteCharacter(activeQuote.character || '');
     setEditQuoteIsPublic(activeQuote.isPublic);
     setIsEditingCard(true);
   };
@@ -159,6 +164,7 @@ export function QuoteDeck() {
       quote: editQuoteText.trim(),
       author: editQuoteAuthor.trim() || undefined,
       source: editQuoteSource.trim() || undefined,
+      character: editQuoteCharacter.trim() || undefined,
       isPublic: editQuoteIsPublic,
     };
     setQuotes(prev => prev.map(q => q.id === activeQuote.id ? updated : q));
@@ -343,6 +349,17 @@ export function QuoteDeck() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-[8.5px] uppercase font-bold text-[var(--color-text-muted)] mb-1">Character (Optional)</label>
+                <input
+                  type="text"
+                  value={newQuoteCharacter}
+                  onChange={(e) => setNewQuoteCharacter(e.target.value)}
+                  placeholder="Who said it, if it's a character line"
+                  className="w-full bg-app-base border border-app-border text-white text-xs px-2.5 py-2 rounded focus:outline-none focus:border-brand-purple/60"
+                />
+              </div>
+
               {/* Public/Private toggle */}
               <button
                 type="button"
@@ -437,11 +454,18 @@ export function QuoteDeck() {
 
                 {/* Footer Speaker Details */}
                 <div className="mt-3 pt-2.5 border-t border-app-border/20 flex flex-wrap items-center justify-between gap-2">
-                  {item.author && (
-                    <span className="text-[10px] font-serif font-black uppercase tracking-wider text-brand-turquoise">
-                      — {item.author}
-                    </span>
-                  )}
+                  <div className="flex flex-col">
+                    {item.character && (
+                      <span className="text-[10px] font-serif font-black text-white">
+                        {item.character}
+                      </span>
+                    )}
+                    {item.author && (
+                      <span className="text-[10px] font-serif font-black uppercase tracking-wider text-brand-turquoise">
+                        — {item.author}
+                      </span>
+                    )}
+                  </div>
                   {item.source && (
                     <span className="text-[9px] italic text-[#CAB9D4]/60">
                       from {item.source}
@@ -531,6 +555,13 @@ export function QuoteDeck() {
                           className="bg-app-base border border-app-border text-white text-[10px] px-2 py-1 rounded"
                         />
                       </div>
+                      <input
+                        type="text"
+                        value={editQuoteCharacter}
+                        onChange={(e) => setEditQuoteCharacter(e.target.value)}
+                        placeholder="Character (Optional)"
+                        className="w-full bg-app-base border border-app-border text-white text-[10px] px-2 py-1 rounded mt-1"
+                      />
                       <button
                         type="button"
                         onClick={() => setEditQuoteIsPublic(prev => !prev)}
@@ -570,6 +601,11 @@ export function QuoteDeck() {
 
                       {/* Editorial Footnote attribution */}
                       <div className="mt-auto border-t border-app-border/30 pt-3.5">
+                        {activeQuote.character && (
+                          <span className="block text-[10px] sm:text-[11px] font-serif font-black text-white select-none mb-0.5">
+                            {activeQuote.character}
+                          </span>
+                        )}
                         {activeQuote.author && (
                           <span className="block text-[10px] sm:text-[11px] font-serif font-black uppercase tracking-widest text-brand-turquoise select-none">
                             — {activeQuote.author}
