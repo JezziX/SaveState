@@ -727,6 +727,23 @@ export default function App() {
         if (book) pushReview(review, book.title, book.coverUrl);
       });
     }
+    if (newState.mediaItems) {
+      setMediaItems(newState.mediaItems);
+      newState.mediaItems.forEach(item => pushMediaItem(item, item.type));
+    }
+    if (newState.mediaLogs) setMediaLogs(newState.mediaLogs);
+    if (newState.mediaReviews) {
+      const privateMediaReviews = newState.mediaReviews.map(r => ({ ...r, isPublic: false }));
+      setMediaReviews(privateMediaReviews);
+      privateMediaReviews.forEach(review => {
+        const item = newState.mediaItems?.find(m => m.id === review.mediaId);
+        if (item) pushMediaReview(review, item.title, item.coverUrl, item.type);
+      });
+    }
+    if (newState.savePoints) {
+      setSavePoints(newState.savePoints);
+      newState.savePoints.forEach(sp => pushSavePoint(sp));
+    }
     if (newState.userName !== undefined) setUserName(newState.userName);
     if (newState.yearlyGoal !== undefined) setYearlyGoal(newState.yearlyGoal);
   };
@@ -784,7 +801,7 @@ export default function App() {
                   className="relative px-3 py-2 bg-app-card border border-brand-purple/30 text-brand-purple rounded-xl shadow-lg cursor-pointer hover:bg-brand-purple/10 transition-colors flex items-center gap-2"
                   title="Navigation Menu"
                 >
-                  <BookOpen size={18} className="stroke-[1.8]" />
+                  <BookOpen size={18} className="stroke-[1.8] icon-glow-lavender" />
                   <span className="text-sm font-bold tracking-wide capitalize">{currentPage}</span>
                 </button>
               
@@ -850,7 +867,7 @@ export default function App() {
             <div className="relative ml-auto">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="w-11 h-11 rounded-full bg-brand-purple/10 border-2 border-brand-purple/40 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-all cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(168,85,247,0.4)] relative overflow-hidden group shrink-0"
+                className="w-11 h-11 rounded-full bg-brand-purple/10 border-2 border-brand-purple/40 text-brand-purple flex items-center justify-center hover:bg-brand-purple/20 transition-all cursor-pointer shadow-[0_0_10px_rgba(215,33,249,0.5)] hover:shadow-[0_0_18px_rgba(215,33,249,0.8)] relative overflow-hidden group shrink-0"
                 title="User Menu"
               >
                 <img src={userAvatar || '/icon-512.png'} alt="Profile Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
@@ -1121,13 +1138,13 @@ export default function App() {
 
           {currentPage === 'achievements' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <AchievementsDashboard books={books} readingLogs={readingLogs} reviews={reviews} />
+              <AchievementsDashboard books={books} readingLogs={readingLogs} reviews={reviews} mediaItems={mediaItems} mediaLogs={mediaLogs} />
             </div>
           )}
 
           {currentPage === 'sync' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <SyncHub appState={{ books, readingLogs, reviews }} onImportState={() => {}} currentUserName={userName} currentYearlyGoal={yearlyGoal} />
+              <SyncHub appState={{ books, readingLogs, reviews, mediaItems, mediaLogs, mediaReviews, savePoints }} onImportState={handleImportVault} currentUserName={userName} currentYearlyGoal={yearlyGoal} />
             </div>
           )}
           {currentPage === 'settings' && (
@@ -1144,7 +1161,7 @@ export default function App() {
               >
                 <SyncHub 
                   onImportState={handleImportVault} 
-                  appState={{ books, readingLogs, reviews, savePoints }}
+                  appState={{ books, readingLogs, reviews, mediaItems, mediaLogs, mediaReviews, savePoints }}
                   currentUserName={userName}
                   currentYearlyGoal={yearlyGoal}
                 />

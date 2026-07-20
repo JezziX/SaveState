@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { MediaItem, MediaLog, MediaReview, SavePoint } from '../types';
-import { Headphones, Film, Tv, Search, CheckCircle2, Bookmark, Play, Plus, Trash2, X } from 'lucide-react';
+import { Headphones, Film, Tv, Search, CheckCircle2, Bookmark, Play, Plus, Trash2, X, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MediaDetailModal } from './MediaDetailModal';
+import { getMediaPoints } from '../utils/points';
 
 interface MediaLibraryProps {
   type: 'podcast' | 'movie' | 'tv';
@@ -52,7 +53,54 @@ export function MediaLibrary({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null);
 
-  const filteredItems = mediaItems.filter(item => item.type === type);
+  // Sorting - mirrors the sort options/behavior on the book shelf
+  type SortField = 'rating' | 'title' | 'author' | 'date-read' | 'genre';
+  type SortOrder = 'asc' | 'desc';
+  const [sortBy, setSortBy] = useState<SortField>('date-read');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  const getMediaRatingValue = (mediaId: string): number => {
+    const r = mediaReviews.find(rev => rev.mediaId === mediaId);
+    return r ? r.rating : 0;
+  };
+
+  const getMediaStatus = (mediaId: string): 'backlog' | 'active' | 'completed' | 'dnf' => {
+    const logs = mediaLogs.filter(l => l.mediaId === mediaId);
+    if (logs.length === 0) return 'backlog';
+    if (logs.some(l => l.status === 'completed')) return 'completed';
+    if (logs.some(l => l.status === 'active')) return 'active';
+    if (logs.some(l => l.status === 'dnf')) return 'dnf';
+    return 'backlog';
+  };
+
+  const getLatestMediaDate = (mediaId: string): string => {
+    const logs = mediaLogs.filter(l => l.mediaId === mediaId && l.endDate);
+    if (logs.length === 0) return '';
+    return [...logs].sort((a, b) => b.endDate.localeCompare(a.endDate))[0].endDate;
+  };
+
+  const filteredItems = mediaItems
+    .filter(item => item.type === type)
+    .sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'title') {
+        comparison = a.title.localeCompare(b.title);
+      } else if (sortBy === 'author') {
+        comparison = a.creator.localeCompare(b.creator);
+      } else if (sortBy === 'genre') {
+        comparison = (a.genre || 'Other').localeCompare(b.genre || 'Other');
+      } else if (sortBy === 'rating') {
+        comparison = getMediaRatingValue(a.id) - getMediaRatingValue(b.id);
+      } else if (sortBy === 'date-read') {
+        const dateA = getLatestMediaDate(a.id);
+        const dateB = getLatestMediaDate(b.id);
+        if (!dateA && !dateB) comparison = a.title.localeCompare(b.title);
+        else if (!dateA) comparison = 1;
+        else if (!dateB) comparison = -1;
+        else comparison = dateA.localeCompare(dateB);
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
   const selectedMediaItem = filteredItems.find(item => item.id === selectedMediaId);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -236,6 +284,32 @@ export function MediaLibrary({
         )}
       </div>
 
+      {/* Sort Controls Row - mirrors the book shelf's sort UI */}
+      {filteredItems.length > 0 && (
+        <div className="flex items-center gap-2 bg-[#141417] border border-app-border rounded-lg p-1 text-xs w-fit">
+          <span className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] px-1 font-mono">Sort:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="bg-app-base border border-app-border text-[var(--color-text-main)] text-[11px] font-bold px-2 py-1 rounded focus:outline-none cursor-pointer"
+          >
+            <option value="date-read">Date Added/Watched</option>
+            <option value="rating">Rating</option>
+            <option value="title">Alphabetical (A-Z)</option>
+            <option value="author">Creator</option>
+            <option value="genre">Genre (Category)</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className="p-1 px-2.5 bg-app-base hover:bg-app-card text-[#CAB9D4] border border-app-border hover:border-brand-purple/35 rounded flex items-center gap-1 transition-all cursor-pointer font-bold text-[10px] uppercase font-mono"
+            title={`Switch to ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+          >
+            <ArrowUpDown size={11} className="text-[#CAB9D4]" />
+            {sortOrder}
+          </button>
+        </div>
+      )}
+
       {/* Visual Shelves */}
       {filteredItems.length > 0 ? (
         <div className="bg-app-card border border-app-border rounded-xl p-6 shadow-inner">
@@ -243,26 +317,36 @@ export function MediaLibrary({
              // Vinyl Shelf
              <div className="flex flex-wrap gap-6 justify-center">
                {filteredItems.map(item => (
-                 <div key={item.id} onClick={() => setSelectedMediaId(item.id)} className="relative w-28 h-28 group cursor-pointer">
-                   {/* Vinyl Record */}
-                   <div className="absolute inset-0 bg-black rounded-full shadow-2xl border-4 border-[#111] border-opacity-90 transform translate-x-0 group-hover:translate-x-8 transition-transform duration-500 z-0">
-                      <div className="absolute inset-2 border-[0.5px] border-white/5 rounded-full" />
-                      <div className="absolute inset-4 border-[0.5px] border-white/5 rounded-full" />
-                      <div className="absolute inset-6 border-[0.5px] border-white/5 rounded-full" />
-                      <div className="absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full overflow-hidden border border-[#222]">
-                        <img src={item.coverUrl} className="w-full h-full object-cover opacity-80" />
-                      </div>
-                      <div className="absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-gray-900 rounded-full" />
+                 <div key={item.id} className="w-28 flex flex-col items-center gap-1.5">
+                   <div onClick={() => setSelectedMediaId(item.id)} className="relative w-28 h-28 group cursor-pointer">
+                     {/* Vinyl Record */}
+                     <div className="absolute inset-0 bg-black rounded-full shadow-2xl border-4 border-[#111] border-opacity-90 transform translate-x-0 group-hover:translate-x-8 transition-transform duration-500 z-0">
+                        <div className="absolute inset-2 border-[0.5px] border-white/5 rounded-full" />
+                        <div className="absolute inset-4 border-[0.5px] border-white/5 rounded-full" />
+                        <div className="absolute inset-6 border-[0.5px] border-white/5 rounded-full" />
+                        <div className="absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full overflow-hidden border border-[#222]">
+                          <img src={item.coverUrl} className="w-full h-full object-cover opacity-80" />
+                        </div>
+                        <div className="absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-gray-900 rounded-full" />
+                     </div>
+                     {/* Vinyl Sleeve */}
+                     <div className="absolute inset-0 bg-app-base rounded-sm shadow-[2px_2px_15px_rgba(0,0,0,0.8)] border border-white/10 z-10 overflow-hidden group-hover:-rotate-2 transition-transform duration-500">
+                       <img src={item.coverUrl} className="w-full h-full object-cover" />
+                       {/* Gloss overlay */}
+                       <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 pointer-events-none" />
+                       
+                       <button onClick={(e) => { e.stopPropagation(); onRemoveMediaItem(item.id); }} className="absolute top-1 right-1 p-1 bg-black/60 rounded text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                          <Trash2 size={12} />
+                       </button>
+                     </div>
                    </div>
-                   {/* Vinyl Sleeve */}
-                   <div className="absolute inset-0 bg-app-base rounded-sm shadow-[2px_2px_15px_rgba(0,0,0,0.8)] border border-white/10 z-10 overflow-hidden group-hover:-rotate-2 transition-transform duration-500">
-                     <img src={item.coverUrl} className="w-full h-full object-cover" />
-                     {/* Gloss overlay */}
-                     <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 pointer-events-none" />
-                     
-                     <button onClick={(e) => { e.stopPropagation(); onRemoveMediaItem(item.id); }} className="absolute top-1 right-1 p-1 bg-black/60 rounded text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                        <Trash2 size={12} />
-                     </button>
+                   {/* Title + Points caption */}
+                   <div className="w-full text-center">
+                     <p className="text-[9px] font-bold text-white truncate" title={item.title}>{item.title}</p>
+                     <div className="points-wrap text-[11px] leading-none mt-0.5">
+                       <span className="points-underline-glow" />
+                       <span className="points-badge"><span className="points-badge-inner">{getMediaPoints(item, getMediaStatus(item.id)).toLocaleString()} PTS</span></span>
+                     </div>
                    </div>
                  </div>
                ))}
@@ -277,6 +361,10 @@ export function MediaLibrary({
                       <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/90 pointer-events-none" />
                       <div className="relative z-10 px-1 text-center -rotate-90 origin-left whitespace-nowrap bottom-6 left-1/2 -ml-2">
                         <span className="text-[7px] sm:text-[9px] font-bold text-white tracking-widest font-display">{item.title}</span>
+                          <span className="points-wrap ml-2 text-[6px] sm:text-[8px]">
+                            <span className="points-underline-glow" />
+                            <span className="points-badge"><span className="points-badge-inner">{getMediaPoints(item, getMediaStatus(item.id)).toLocaleString()} PTS</span></span>
+                          </span>
                           {(item.currentProgress || item.totalLength) && (
                             <span className="ml-2 text-[6px] sm:text-[7px] font-mono text-brand-purple opacity-80 tracking-wider">
                               [{item.currentProgress ? `${item.currentProgress}/` : ''}{item.totalLength || '?'}]

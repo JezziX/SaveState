@@ -5,6 +5,7 @@ import { Star, Bookmark, ChevronDown, X, CheckCircle2, BookOpen, Trash2, Search,
 import { motion } from 'motion/react';
 import { supabase } from '../utils/supabaseClient';
 import { upsertQuote } from '../utils/quotesApi';
+import { getBookPoints } from '../utils/points';
 
 // Unified helper to fallback to styled Unsplash covers in case Open Library or other URLs fail
 export const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, title: string) => {
@@ -1155,6 +1156,10 @@ const getDecorForSlot = (shelfIdx: number, salt: number) => {
                               <div className="text-[12px] font-bold line-clamp-2 leading-tight font-serif text-[#ebdcc5] drop-shadow-sm">
                                 {book.title}
                               </div>
+                              <div className="points-wrap text-[12px] leading-none mt-1">
+                                <span className="points-underline-glow" />
+                                <span className="points-badge"><span className="points-badge-inner">{getBookPoints(book, status).toLocaleString()} PTS</span></span>
+                              </div>
                               <p className="text-[10px] text-purple-300 mt-1.5 truncate italic">{book.author}</p>
                               <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-purple-900/50 text-[10px] text-[var(--color-text-muted)] font-sans">
                                 <span className="uppercase tracking-wider text-[9px]">{status.replace('-', ' ')}</span>
@@ -1295,6 +1300,10 @@ const getDecorForSlot = (shelfIdx: number, salt: number) => {
                         <h3 className="text-xs font-bold text-white leading-tight truncate group-hover:text-brand-purple transition-colors pr-4">
                           {book.title}
                         </h3>
+                        <div className="points-wrap text-[13px] leading-none my-0.5">
+                          <span className="points-underline-glow" />
+                          <span className="points-badge"><span className="points-badge-inner">{getBookPoints(book, status).toLocaleString()} PTS</span></span>
+                        </div>
                         <p className="text-[10px] text-[var(--color-text-muted)] font-medium truncate">{book.author}</p>
                         <div className="flex flex-wrap items-center gap-2 pt-0.5">
                           {getStatusBadge(status)}
@@ -1572,6 +1581,10 @@ const getDecorForSlot = (shelfIdx: number, salt: number) => {
                         <span className="text-[9px] text-[#CAB9D4]/60 font-bold font-mono">
                           {book.pages ? `(${book.pages} pages)` : ''}
                         </span>
+                      </div>
+                      <div className="points-wrap text-[11px] leading-none mt-0.5">
+                        <span className="points-underline-glow" />
+                        <span className="points-badge"><span className="points-badge-inner">{getBookPoints(book, status).toLocaleString()} PTS</span></span>
                       </div>
                       <p className="text-[10px] text-[var(--color-text-muted)] font-medium truncate mt-0.5">by {book.author}</p>
                       

@@ -1,40 +1,56 @@
 import React, { useMemo } from 'react';
-import { Book, ReadingLog, BookReview } from '../types';
+import { Book, ReadingLog, BookReview, MediaItem, MediaLog } from '../types';
 import { Trophy, Star, TrendingUp, Clock, BookOpen, Crown, Zap, Moon, Flame, Target, Medal, Hexagon } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { motion } from 'motion/react';
+import { getBookPoints, getMediaPoints } from '../utils/points';
+import { getLevelInfo } from '../utils/levels';
 
 interface AchievementsDashboardProps {
   books: Book[];
   readingLogs: ReadingLog[];
   reviews: BookReview[];
+  mediaItems?: MediaItem[];
+  mediaLogs?: MediaLog[];
 }
 
-export function AchievementsDashboard({ books, readingLogs, reviews }: AchievementsDashboardProps) {
+export function AchievementsDashboard({ books, readingLogs, reviews, mediaItems = [], mediaLogs = [] }: AchievementsDashboardProps) {
+  const getBookStatus = (bookId: string): 'backlog' | 'active' | 'completed' | 'dnf' => {
+    const logs = readingLogs.filter(l => l.bookId === bookId);
+    if (logs.some(l => l.status === 'completed')) return 'completed';
+    if (logs.some(l => l.status === 'dnf')) return 'dnf';
+    if (logs.some(l => l.status === 'active')) return 'active';
+    return 'backlog';
+  };
+
+  const getMediaStatus = (mediaId: string): 'backlog' | 'active' | 'completed' | 'dnf' => {
+    const logs = mediaLogs.filter(l => l.mediaId === mediaId);
+    if (logs.some(l => l.status === 'completed')) return 'completed';
+    if (logs.some(l => l.status === 'dnf')) return 'dnf';
+    if (logs.some(l => l.status === 'active')) return 'active';
+    return 'backlog';
+  };
+
   const completedBooks = useMemo(() => {
     return books.filter(b => b.endDate || readingLogs.some(l => l.bookId === b.id && l.status === 'completed'));
   }, [books, readingLogs]);
 
-  const totalPages = useMemo(() => {
-    return completedBooks.reduce((sum, b) => sum + (b.pages || 0), 0);
-  }, [completedBooks]);
+  // Total XP across every book AND every media item (podcasts/movies/tv) -
+  // this feeds the 25-level Media Mastery matrix (see utils/levels.ts).
+  // Unlocking a level/title here does NOT auto-equip it to the public
+  // profile - per the manual loadout rule, the user must open the loadout
+  // drawer and choose what to display.
+  const totalXp = useMemo(() => {
+    const bookXp = books.reduce((sum, b) => sum + getBookPoints(b, getBookStatus(b.id)), 0);
+    const mediaXp = mediaItems.reduce((sum, m) => sum + getMediaPoints(m, getMediaStatus(m.id)), 0);
+    return bookXp + mediaXp;
+  }, [books, readingLogs, mediaItems, mediaLogs]);
 
-  // Assume average reading speed of 50 pages per hour
+  const levelInfo = useMemo(() => getLevelInfo(totalXp), [totalXp]);
+
+  const totalPages = useMemo(() => completedBooks.reduce((sum, b) => sum + (b.pages || 0), 0), [completedBooks]);
   const avgPagesPerHour = 50;
   const totalHoursLogged = Math.round(totalPages / avgPagesPerHour);
-
-  // Level Progression
-  const readerLevel = useMemo(() => {
-    if (totalPages > 10000) return { title: 'Arch-Mage Reader', rank: 5, nextLevelAt: null };
-    if (totalPages > 5000) return { title: 'Master Scholar', rank: 4, nextLevelAt: 10000 };
-    if (totalPages > 2000) return { title: 'Bibliophile', rank: 3, nextLevelAt: 5000 };
-    if (totalPages > 500) return { title: 'Apprentice Reader', rank: 2, nextLevelAt: 2000 };
-    return { title: 'Novice Page-Turner', rank: 1, nextLevelAt: 500 };
-  }, [totalPages]);
-
-  const xpProgress = readerLevel.nextLevelAt 
-    ? (totalPages / readerLevel.nextLevelAt) * 100 
-    : 100;
 
   // Streak logic (basic approximation: check unique dates in readingLogs)
   const streakDays = useMemo(() => {
@@ -103,27 +119,32 @@ export function AchievementsDashboard({ books, readingLogs, reviews }: Achieveme
                 <h3 className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider flex items-center gap-2 mb-1">
                   <Hexagon size={14} className="text-brand-turquoise" /> Current Rank
                 </h3>
-                <h2 className="text-2xl font-bold text-brand-purple font-display">{readerLevel.title}</h2>
+                <h2 className="text-2xl font-bold text-brand-purple font-display">{levelInfo.title}</h2>
               </div>
               <div className="text-right">
-                <span className="text-3xl font-black text-[var(--color-text-main)] font-mono">{totalPages}</span>
-                <span className="text-[10px] text-[var(--color-text-muted)] block uppercase tracking-wider font-bold">Total XP (Pages)</span>
+                <span className="text-3xl font-black text-[var(--color-text-main)] font-mono">{levelInfo.currentXp.toLocaleString()}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] block uppercase tracking-wider font-bold">Total XP</span>
               </div>
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
-                <span>Rank {readerLevel.rank}</span>
-                <span>{readerLevel.nextLevelAt ? `Next: Rank ${readerLevel.rank + 1} (${readerLevel.nextLevelAt} XP)` : 'Max Rank Achieved'}</span>
+                <span>Level {levelInfo.level} / 25</span>
+                <span>{levelInfo.xpForNextLevel ? `Next: ${levelInfo.nextTitle} (${(levelInfo.xpForNextLevel - levelInfo.xpIntoLevel).toLocaleString()} XP to go)` : 'Max Level Achieved'}</span>
               </div>
               <div className="h-3 w-full bg-app-base rounded-full overflow-hidden border border-app-border">
                 <motion.div 
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, xpProgress)}%` }}
+                  animate={{ width: `${levelInfo.progressPct}%` }}
                   transition={{ duration: 1.5, ease: "easeOut" }}
                   className="h-full bg-gradient-to-r from-brand-turquoise to-brand-purple"
                 />
               </div>
+              {levelInfo.perk && (
+                <p className="text-[9px] text-[var(--color-text-muted)] pt-1">
+                  Unlocked perk: <span className="text-brand-purple font-bold">{levelInfo.perk}</span> - equip it from your loadout drawer.
+                </p>
+              )}
             </div>
           </section>
 
