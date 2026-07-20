@@ -46,13 +46,44 @@ export function BookDetailModal({
   const [quoteCharacter, setQuoteCharacter] = useState('');
   const [quoteAdded, setQuoteAdded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [communityReviews, setCommunityReviews] = useState<any[]>([]);
+  const [communityLoading, setCommunityLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'review' | 'community' | 'dates' | 'link'>('review');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setUserId(session.user.id);
     });
   }, []);
-  const [activeTab, setActiveTab] = useState<'review' | 'community' | 'dates' | 'link'>('review');
+
+  useEffect(() => {
+    if (activeTab !== 'community') return;
+    let cancelled = false;
+    setCommunityLoading(true);
+    (async () => {
+      // RLS already only returns public rows (or our own), so anyone else's
+      // review shown here is guaranteed to be one they chose to make public.
+      const { data, error } = await supabase
+        .from('public_reviews')
+        .select('*')
+        .eq('media_id', book.id)
+        .neq('user_id', userId || '')
+        .order('updated_at', { ascending: false })
+        .limit(20);
+      if (error) console.error('Failed to load community reviews:', error.message);
+      if (!cancelled && data) {
+        const userIds = [...new Set(data.map((r: any) => r.user_id))];
+        let profileMap: Record<string, any> = {};
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase.from('profiles').select('id, display_name, handle, avatar_url').in('id', userIds);
+          (profiles || []).forEach((p: any) => { profileMap[p.id] = p; });
+        }
+        setCommunityReviews(data.map((r: any) => ({ ...r, _profile: profileMap[r.user_id] })));
+      }
+      setCommunityLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, book.id, userId]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Overwrite & Linking States
@@ -621,30 +652,37 @@ export function BookDetailModal({
               <div className="bg-app-base border border-app-border rounded-xl p-4 text-center">
                 <Star size={24} className="text-brand-turquoise mx-auto mb-2 opacity-50" />
                 <h3 className="text-xs font-bold text-[var(--color-text-main)] mb-1">Reviews</h3>
-                
               </div>
-              <div className="space-y-3">
-                <div className="bg-app-card border border-app-border rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <img src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="Elena Vance" className="w-5 h-5 rounded-full border border-brand-purple/50" />
-                    <span className="text-[10px] font-bold text-[var(--color-text-main)]">Elena Vance</span>
-                    <div className="flex gap-0.5 ml-auto">
-                      {[1,2,3,4,5].map(s => <Star key={s} size={10} className={s <= 5 ? "fill-yellow-400 text-yellow-400" : "text-gray-600"} />)}
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-[var(--color-text-muted)] italic">"This book completely changed my perspective on the genre. The character development is unmatched."</p>
+              {communityLoading ? (
+                <div className="text-center text-xs text-[var(--color-text-muted)] py-6 animate-pulse">Loading reviews...</div>
+              ) : communityReviews.length === 0 ? (
+                <div className="text-center text-xs text-[var(--color-text-muted)] py-6">
+                  No public reviews from other readers yet.
                 </div>
-                <div className="bg-app-card border border-app-border rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <img src="https://i.pravatar.cc/150?u=a04258114e29026702d" alt="Sarah Chen" className="w-5 h-5 rounded-full border border-brand-purple/50" />
-                    <span className="text-[10px] font-bold text-[var(--color-text-main)]">Sarah Chen</span>
-                    <div className="flex gap-0.5 ml-auto">
-                      {[1,2,3,4,5].map(s => <Star key={s} size={10} className={s <= 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-600"} />)}
+              ) : (
+                <div className="space-y-3">
+                  {communityReviews.map((r) => (
+                    <div key={r.id} className="bg-app-card border border-app-border rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <img
+                          src={r._profile?.avatar_url || '/icon-512-any.png'}
+                          alt={r._profile?.display_name || 'Reader'}
+                          className="w-5 h-5 rounded-full border border-brand-purple/50 object-cover bg-app-base"
+                        />
+                        <span className="text-[10px] font-bold text-[var(--color-text-main)]">
+                          {r._profile?.display_name || 'Anonymous Reader'}
+                        </span>
+                        <div className="flex gap-0.5 ml-auto">
+                          {[1, 2, 3, 4, 5].map(s => <Star key={s} size={10} className={s <= r.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-600"} />)}
+                        </div>
+                      </div>
+                      {r.review_text && (
+                        <p className="text-[10px] text-[var(--color-text-muted)] italic">"{r.review_text}"</p>
+                      )}
                     </div>
-                  </div>
-                  <p className="text-[10px] text-[var(--color-text-muted)] italic">"Solid read. Pacing was a bit slow in the middle, but the ending made up for it."</p>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
