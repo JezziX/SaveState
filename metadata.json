@@ -1,6 +1,0 @@
-{
-  "name": "Book Tracker",
-  "description": "A sleek book tracking application with search, read date logging, and a cover-filled calendar view.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
