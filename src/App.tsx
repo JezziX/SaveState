@@ -846,8 +846,8 @@ export default function App() {
                     Home
                   </button>
                 )}
-                <div className="flex items-center gap-2 group/name pl-1 md:pl-0">
-                  <img src="/icon-512.png" alt="SaveState Logo" className="w-10 h-10 object-cover rounded-md" />
+                <div className="flex items-center gap-3 group/name pl-1 md:pl-0">
+                  <img src="/icon-512-any.png" alt="SaveState Logo" className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_0_12px_rgba(215,33,249,0.35)]" />
                   <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
                     {userName ? `${userName}'s ` : 'My '}SaveState
                   </h1>
