@@ -142,6 +142,7 @@ export function parseGoodreadsCSV(csvText: string): ParseResult | null {
   const dateStartedIdx = findHeaderIndex(['date started', 'started date', '시작일', '읽기 시작']);
   const readCountIdx = findHeaderIndex(['read count', '횟수']);
   const exclusiveShelfIdx = findHeaderIndex(['exclusive shelf', 'shelf', '책장', '구분', '상태']);
+  const allShelvesIdx = findHeaderIndex(['bookshelves', '책장 목록']);
   const myReviewIdx = findHeaderIndex(['my review', 'review', '리뷰', '서평', 'note', 'memo', '메모']);
   
   const isbn13Idx = findHeaderIndex(['isbn13']);
@@ -188,18 +189,9 @@ export function parseGoodreadsCSV(csvText: string): ParseResult | null {
       coverUrl = `https://images.unsplash.com/photo-${coverHash % 2 === 0 ? '1544947950-fa07a98d237f' : '1543002588-bfa74002ed7e'}?q=80&w=300&auto=format&fit=crop`;
     }
 
-    const book: Book = {
-      id,
-      title,
-      author,
-      pages,
-      publishYear,
-      coverUrl
-    };
-    books.push(book);
-
-    // Reading Status (exclusive shelf or read date)
-    const shelf = exclusiveShelfIdx !== -1 ? row[exclusiveShelfIdx].toLowerCase() : '';
+    // Reading Status (exclusive shelf, read date, and DNF detection)
+    const shelf = exclusiveShelfIdx !== -1 ? (row[exclusiveShelfIdx] || '').toLowerCase() : '';
+    const allShelvesRaw = allShelvesIdx !== -1 ? (row[allShelvesIdx] || '').toLowerCase() : '';
     const dateReadRaw = dateReadIdx !== -1 ? row[dateReadIdx] : undefined;
     const dateRead = standardizeDate(dateReadRaw);
     const dateAddedRaw = dateAddedIdx !== -1 ? row[dateAddedIdx] : undefined;
@@ -207,24 +199,53 @@ export function parseGoodreadsCSV(csvText: string): ParseResult | null {
     const dateStartedRaw = dateStartedIdx !== -1 ? row[dateStartedIdx] : undefined;
     const dateStarted = standardizeDate(dateStartedRaw);
 
-    let status: 'backlog' | 'active' | 'completed' = 'backlog';
-    if (shelf === 'currently-reading' || shelf === 'active' || shelf.includes('읽는')) {
+    // Goodreads has no official "did not finish" shelf - people track this with
+    // a custom shelf of their own naming. We check both the Exclusive Shelf and
+    // the full Bookshelves list for common names for it.
+    const dnfKeywords = ['did-not-finish', 'did not finish', 'dnf', 'abandoned', 'gave up', 'gave-up'];
+    const isDnf = dnfKeywords.some(kw => shelf.includes(kw) || allShelvesRaw.includes(kw));
+
+    let status: 'backlog' | 'active' | 'completed' | 'dnf' = 'backlog';
+    if (isDnf) {
+      status = 'dnf';
+    } else if (shelf === 'currently-reading' || shelf === 'active' || shelf.includes('읽는')) {
       status = 'active';
-    } else if (shelf === 'backlog' || shelf.includes('읽고 싶은') || shelf.includes('희망')) {
-      status = 'backlog';
-    } else if (shelf === 'read' || shelf.includes('완료') || dateRead) {
-      status = 'completed';
     } else if (dateRead) {
+      // Only counts as "completed" if there's an actual finish date - Goodreads
+      // sometimes exports "read" books with a blank Date Read (a known bug on
+      // their end), and those shouldn't silently count as complete here.
       status = 'completed';
+    } else {
+      status = 'backlog';
     }
 
-    // Add reading log if reading or completed has a date
-    const logDate = dateRead || dateAdded || new Date().toISOString().split('T')[0];
+    const didNotFinish = status === 'dnf';
+    // Workaround: Goodreads doesn't export a real "date started" field at all,
+    // so we use "Date Added" as the closest available approximation.
+    const bookStartDate = status === 'active' || status === 'completed' ? (dateStarted || dateAdded || undefined) : undefined;
+    const bookEndDate = status === 'completed' ? dateRead : undefined;
+
+    const book: Book = {
+      id,
+      title,
+      author,
+      pages,
+      publishYear,
+      coverUrl,
+      startDate: bookStartDate,
+      endDate: bookEndDate,
+      didNotFinish,
+    };
+    books.push(book);
+
+    // Add reading log too, so the calendar/shelves reflect this immediately
+    // after import (before the first cloud refresh regenerates it from the
+    // book's own saved fields).
     readingLogs.push({
       id: `log_gr_${i}_${Date.now()}`,
       bookId: id,
-      endDate: logDate,
-      startDate: dateStarted || (status !== 'backlog' ? dateAdded : undefined) || undefined,
+      endDate: bookEndDate || '',
+      startDate: bookStartDate,
       status
     });
 
@@ -238,7 +259,8 @@ export function parseGoodreadsCSV(csvText: string): ParseResult | null {
         bookId: id,
         rating: isNaN(rating) ? 0 : rating,
         notes: notes || '',
-        updatedAt: logDate
+        updatedAt: bookEndDate || bookStartDate || new Date().toISOString().split('T')[0],
+        isPublic: false
       });
     }
   }
@@ -399,7 +421,8 @@ export function parseBookmoryCSV(csvText: string): ParseResult | null {
         bookId: id,
         rating,
         notes: memo || '',
-        updatedAt: endDateStr
+        updatedAt: endDateStr,
+        isPublic: false
       });
     }
   }

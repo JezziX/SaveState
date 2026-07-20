@@ -16,6 +16,7 @@ export interface Book {
   type?: 'book';
   currentProgress?: string | number;
   totalLength?: string | number;
+  notes?: string; // Private "SaveState" checkpoint notes - never shared publicly
 }
 
 export interface ReadingLog {
@@ -29,9 +30,9 @@ export interface ReadingLog {
 export interface BookReview {
   bookId: string;
   rating: number; // 1-5 stars
-  notes: string; // Thoughts / custom memory notes
+  notes: string; // Public review text
   updatedAt: string;
-  quotes?: string[]; // Memorable quotes highlighted by the reader
+  isPublic: boolean; // false = "Only Me" - visible only to the owner
 }
 
 export interface MediaItem {
@@ -52,6 +53,7 @@ export interface MediaItem {
   episodes?: { id: string; season: number; number: number; title: string; aired?: string }[];
   currentProgress?: string | number;
   totalLength?: string | number;
+  notes?: string; // Private "SaveState" checkpoint notes - never shared publicly
 }
 
 export interface MediaLog {
@@ -65,9 +67,23 @@ export interface MediaLog {
 export interface MediaReview {
   mediaId: string;
   rating: number;
-  notes: string;
+  notes: string; // Public review text
   updatedAt: string;
-  quotes?: string[];
+  isPublic: boolean; // false = "Only Me" - visible only to the owner
+}
+
+// A single quote, always public by default (like a mini review) unless the
+// user explicitly marks it private. Optionally linked to a book/media title
+// via free text (not a hard database link) so it works for quotes from
+// anything, tracked in the library or not.
+export interface Quote {
+  id: string;
+  quote: string;
+  author?: string;
+  source?: string;
+  coverUrl?: string;
+  isPublic: boolean;
+  createdAt: string;
 }
 
 export interface AppPreferences {

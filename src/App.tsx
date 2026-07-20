@@ -43,13 +43,15 @@ const DEFAULT_REVIEWS: BookReview[] = [
     bookId: "OL1168083W",
     rating: 5,
     notes: "A captivating study of surveillance, state power, and human memory. Doublethink still feels incredibly relevant.",
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    isPublic: true
   },
   {
     bookId: "OL454378W",
     rating: 4,
     notes: "The prose is flawless, especially the green light and valley of ashes symbols. Gatsby is tragically magnificent.",
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    isPublic: true
   }
 ];
 
@@ -96,6 +98,7 @@ const toDbRow = (item: any, mediaType: string, userId: string) => ({
   overview: item.overview || null,
   cast: item.cast || null,
   episodes: item.episodes || null,
+  notes: item.notes || null,
 });
 
 // Takes a raw row back out of `media_items` and turns it into a Book.
@@ -116,6 +119,7 @@ const fromDbRowToBook = (row: any): Book => ({
   type: 'book',
   currentProgress: row.current_progress || undefined,
   totalLength: row.total_length || undefined,
+  notes: row.notes || undefined,
 });
 
 // Takes a raw row back out of `media_items` and turns it into a MediaItem
@@ -138,6 +142,7 @@ const fromDbRowToMediaItem = (row: any): MediaItem => ({
   episodes: row.episodes || undefined,
   currentProgress: row.current_progress || undefined,
   totalLength: row.total_length || undefined,
+  notes: row.notes || undefined,
 });
 
 export default function App() {
@@ -257,8 +262,8 @@ export default function App() {
           const mapped = {
             rating: r.rating,
             notes: r.review_text,
-            quotes: r.quotes || [],
-            updatedAt: r.updated_at
+            updatedAt: r.updated_at,
+            isPublic: r.is_public !== false,
           };
           if (r.media_type === 'book') {
             bookReviews.push({ ...mapped, bookId: r.media_id });
@@ -338,7 +343,7 @@ export default function App() {
         media_cover_url: bookCover,
         rating: review.rating,
         review_text: review.notes,
-        quotes: review.quotes || [],
+        is_public: review.isPublic,
         updated_at: new Date().toISOString()
       });
       if (error) console.error('Failed to save review to cloud:', error.message, error.details, error.hint);
@@ -359,7 +364,7 @@ export default function App() {
         media_cover_url: mediaCover,
         rating: review.rating,
         review_text: review.notes,
-        quotes: review.quotes || [],
+        is_public: review.isPublic,
         updated_at: new Date().toISOString()
       });
       if (error) console.error('Failed to save media review to cloud:', error.message, error.details, error.hint);
@@ -712,8 +717,12 @@ export default function App() {
     }
     if (newState.readingLogs) setReadingLogs(newState.readingLogs);
     if (newState.reviews) {
-      setReviews(newState.reviews);
-      newState.reviews.forEach(review => {
+      // Imported reviews always start as "Only Me" - the user can flip any
+      // of them public afterward, but nothing from an import goes public
+      // automatically.
+      const privateReviews = newState.reviews.map(r => ({ ...r, isPublic: false }));
+      setReviews(privateReviews);
+      privateReviews.forEach(review => {
         const book = newState.books?.find(b => b.id === review.bookId);
         if (book) pushReview(review, book.title, book.coverUrl);
       });
@@ -1009,7 +1018,6 @@ export default function App() {
                 onSelectBook={setSelectedBookId}
                 onRemoveBook={handleRemoveBook}
                 onUpdateBook={handleUpdateBook}
-                onSaveReview={handleSaveReview}
                 onBatchRemoveBooks={(ids) => {
                   setBooks(prev => prev.filter(b => !ids.includes(b.id)));
                   setReadingLogs(prev => prev.filter(log => !ids.includes(log.bookId)));
@@ -1106,13 +1114,13 @@ export default function App() {
 
           {currentPage === 'notebook' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <NotesNotebook books={books} reviews={reviews} onSaveReview={handleSaveReview} />
+              <NotesNotebook books={books} onUpdateBook={handleUpdateBook} />
             </div>
           )}
 
           {currentPage === 'quotes' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <QuoteDeck books={books} reviews={reviews} onSaveReview={handleSaveReview} />
+              <QuoteDeck />
             </div>
           )}
 
@@ -1180,16 +1188,22 @@ export default function App() {
               book={completedBookForCelebration}
               onClose={() => setCompletedBookForCelebration(null)}
               onSaveRating={(rating) => {
-                const updatedReview: BookReview = {
-                  bookId: completedBookForCelebration.id,
-                  rating,
-                  notes: '',
-                  updatedAt: new Date().toISOString(),
-                };
+                const existing = reviews.find(r => r.bookId === completedBookForCelebration.id);
+                const updatedReview: BookReview = existing
+                  ? { ...existing, rating }
+                  : {
+                      bookId: completedBookForCelebration.id,
+                      rating,
+                      notes: '',
+                      updatedAt: new Date().toISOString(),
+                      isPublic: false,
+                    };
                 setReviews(prev => {
-                  const existing = prev.find(r => r.bookId === updatedReview.bookId);
-                  if (existing) {
-                    return prev.map(r => r.bookId === updatedReview.bookId ? { ...r, rating } : r);
+                  const idx = prev.findIndex(r => r.bookId === updatedReview.bookId);
+                  if (idx > -1) {
+                    const copy = [...prev];
+                    copy[idx] = updatedReview;
+                    return copy;
                   }
                   return [...prev, updatedReview];
                 });

@@ -512,7 +512,8 @@ export function SyncHub({ appState, onImportState, currentUserName, currentYearl
           bookId: targetBookId,
           rating: mergedRating,
           notes: mergedNote,
-          updatedAt: existing.updatedAt || inReview.updatedAt
+          updatedAt: existing.updatedAt || inReview.updatedAt,
+          isPublic: existing.isPublic ?? inReview.isPublic ?? false
         };
       } else {
         mergedReviews.push({

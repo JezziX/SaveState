@@ -1,190 +1,94 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Book, BookReview } from '../types';
-import { ChevronLeft, ChevronRight, Shuffle, Sparkles, BookMarked, Quote as QuoteIcon, Trash2, Search, Plus, Pencil, Check, X } from 'lucide-react';
+import { Quote } from '../types';
+import { ChevronLeft, ChevronRight, Shuffle, Sparkles, BookMarked, Quote as QuoteIcon, Trash2, Search, Plus, Pencil, Check, X, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { supabase } from '../utils/supabaseClient';
+import { fetchMyQuotes, upsertQuote, deleteQuote } from '../utils/quotesApi';
 
-interface QuoteDeckProps {
-  books: Book[];
-  reviews: BookReview[];
-  onSaveReview?: (review: BookReview) => void;
-}
-
-interface StandaloneQuote {
-  id: string;
-  quote: string;
-  author: string;
-  source?: string;
-  createdAt: string;
-}
-
-interface QuoteItem {
-  id: string;
-  quote: string;
-  bookTitle: string;
-  bookAuthor: string;
-  coverUrl: string;
-  bookId?: string;
-  quoteIndexInReview?: number;
-  isStandalone?: boolean;
-}
-
-export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
-  const [standaloneQuotes, setStandaloneQuotes] = useState<StandaloneQuote[]>([]);
+// QuoteDeck is fully self-contained: every quote (whether tied to a book or
+// completely freeform) lives in one unified `quotes` table. Quotes are
+// public by default - like a mini review - unless the user flips a specific
+// one to private with the toggle.
+export function QuoteDeck() {
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadStandaloneQuotes();
+    loadQuotes();
   }, []);
 
-  const loadStandaloneQuotes = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data } = await supabase.from('standalone_quotes').select('*').eq('user_id', session.user.id);
-      if (data) {
-        setStandaloneQuotes(data.map(d => ({
-          id: d.id,
-          quote: d.quote,
-          author: d.author,
-          source: d.source,
-          createdAt: d.created_at
-        })));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const pushStandaloneQuote = async (sq: StandaloneQuote) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      await supabase.from('standalone_quotes').upsert({
-        id: sq.id,
-        user_id: session.user.id,
-        quote: sq.quote,
-        author: sq.author,
-        source: sq.source,
-        created_at: sq.createdAt
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const deleteStandaloneQuote = async (id: string) => {
-    try {
-      await supabase.from('standalone_quotes').delete().eq('id', id);
-    } catch (e) {
-      console.error(e);
-    }
+  const loadQuotes = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setUserId(session.user.id);
+    const data = await fetchMyQuotes(session.user.id);
+    setQuotes(data);
   };
 
   const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
   const [quoteLayoutMode, setQuoteLayoutMode] = useState<'deck' | 'list'>('deck');
-  const [isAddingStandalone, setIsAddingStandalone] = useState(false);
+  const [isAddingQuote, setIsAddingQuote] = useState(false);
   const [newQuoteText, setNewQuoteText] = useState('');
   const [newQuoteAuthor, setNewQuoteAuthor] = useState('');
   const [newQuoteSource, setNewQuoteSource] = useState('');
+  const [newQuoteIsPublic, setNewQuoteIsPublic] = useState(true);
 
   // Editing state for cards
   const [isEditingCard, setIsEditingCard] = useState(false);
   const [editQuoteText, setEditQuoteText] = useState('');
   const [editQuoteAuthor, setEditQuoteAuthor] = useState('');
   const [editQuoteSource, setEditQuoteSource] = useState('');
+  const [editQuoteIsPublic, setEditQuoteIsPublic] = useState(true);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Extract all quotes from both book reviews and standalone entry list
-  const allQuotes = useMemo<QuoteItem[]>(() => {
-    const items: QuoteItem[] = [];
-
-    // 1. Add all book-linked quotes from active book reviews
-    reviews.forEach(r => {
-      const book = books.find(b => b.id === r.bookId);
-      if (book && r.quotes && r.quotes.length > 0) {
-        r.quotes.forEach((q, idx) => {
-          if (q.trim()) {
-            items.push({
-              id: `${r.bookId}-user-quote-${idx}`,
-              quote: q.trim(),
-              bookTitle: book.title,
-              bookAuthor: book.author,
-              coverUrl: book.coverUrl,
-              bookId: r.bookId,
-              quoteIndexInReview: idx,
-              isStandalone: false
-            });
-          }
-        });
-      }
-    });
-
-    // 2. Add all standalone quotes added by the user
-    standaloneQuotes.forEach(sq => {
-      items.push({
-        id: sq.id,
-        quote: sq.quote,
-        bookTitle: sq.source || '',
-        bookAuthor: sq.author,
-        coverUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=300&auto=format&fit=crop', // default fallback warm cover
-        isStandalone: true
-      });
-    });
-
-    // 3. Fallback defaults if there are zero quotes added yet at all
-    if (items.length === 0) {
-      const backupQuotes = [
-        {
-          id: 'def1',
-          quote: "So we beat on, boats against the current, borne back ceaselessly into the past.",
-          bookTitle: "The Great Gatsby",
-          bookAuthor: "F. Scott Fitzgerald"
-        },
-        {
-          id: 'def2',
-          quote: "In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled with the ends of worms and an oozy smell...",
-          bookTitle: "The Hobbit",
-          bookAuthor: "J.R.R. Tolkien"
-        },
-        {
-          id: 'def3',
-          quote: "War is peace. Freedom is slavery. Ignorance is strength.",
-          bookTitle: "1984",
-          bookAuthor: "George Orwell"
-        }
-      ];
-
-      backupQuotes.forEach((bq, idx) => {
-        items.push({
-          id: `def-${idx}`,
-          quote: bq.quote,
-          bookTitle: bq.bookTitle,
-          bookAuthor: bq.bookAuthor,
-          coverUrl: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=300&auto=format&fit=crop',
-          isStandalone: false
-        });
-      });
-    }
-
-    return items;
-  }, [books, reviews, standaloneQuotes]);
+  // Fallback sample quotes shown only when the user has nothing saved yet
+  const allQuotes = useMemo<Quote[]>(() => {
+    if (quotes.length > 0) return quotes;
+    return [
+      {
+        id: 'def1',
+        quote: "So we beat on, boats against the current, borne back ceaselessly into the past.",
+        author: 'F. Scott Fitzgerald',
+        source: 'The Great Gatsby',
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'def2',
+        quote: "In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled with the ends of worms and an oozy smell...",
+        author: 'J.R.R. Tolkien',
+        source: 'The Hobbit',
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'def3',
+        quote: "War is peace. Freedom is slavery. Ignorance is strength.",
+        author: 'George Orwell',
+        source: '1984',
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+  }, [quotes]);
 
   // Handle live query filter mapping
   const filteredQuotes = useMemo(() => {
     if (!quoteSearchQuery.trim()) return allQuotes;
     const q = quoteSearchQuery.toLowerCase();
-    return allQuotes.filter(item => 
-      item.quote.toLowerCase().includes(q) || 
-      item.bookAuthor.toLowerCase().includes(q) || 
-      item.bookTitle.toLowerCase().includes(q)
+    return allQuotes.filter(item =>
+      item.quote.toLowerCase().includes(q) ||
+      (item.author || '').toLowerCase().includes(q) ||
+      (item.source || '').toLowerCase().includes(q)
     );
   }, [allQuotes, quoteSearchQuery]);
 
   const activeQuote = filteredQuotes[currentIndex % filteredQuotes.length] || null;
+  const hasRealQuotes = quotes.length > 0;
 
   const handleNext = () => {
     if (filteredQuotes.length <= 1) return;
@@ -214,24 +118,26 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
     setCurrentIndex(nextIdx);
   };
 
-  // Standalone Quote Saver
-  const handleSaveStandalone = () => {
-    if (!newQuoteText.trim() || !newQuoteAuthor.trim()) return;
+  // Add a new quote
+  const handleSaveNewQuote = async () => {
+    if (!newQuoteText.trim() || !userId) return;
 
-    const newSq: StandaloneQuote = {
-      id: `standalone-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    const newQuote: Quote = {
+      id: `quote-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       quote: newQuoteText.trim(),
-      author: newQuoteAuthor.trim(),
+      author: newQuoteAuthor.trim() || undefined,
       source: newQuoteSource.trim() || undefined,
-      createdAt: new Date().toISOString()
+      isPublic: newQuoteIsPublic,
+      createdAt: new Date().toISOString(),
     };
 
-    setStandaloneQuotes(prev => [newSq, ...prev]);
-    pushStandaloneQuote(newSq);
+    setQuotes(prev => [newQuote, ...prev]);
+    await upsertQuote(newQuote, userId);
     setNewQuoteText('');
     setNewQuoteAuthor('');
     setNewQuoteSource('');
-    setIsAddingStandalone(false);
+    setNewQuoteIsPublic(true);
+    setIsAddingQuote(false);
     setCurrentIndex(0); // View immediately
   };
 
@@ -239,63 +145,42 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
   const handleBeginEdit = () => {
     if (!activeQuote) return;
     setEditQuoteText(activeQuote.quote);
-    setEditQuoteAuthor(activeQuote.bookAuthor);
-    setEditQuoteSource(activeQuote.bookTitle);
+    setEditQuoteAuthor(activeQuote.author || '');
+    setEditQuoteSource(activeQuote.source || '');
+    setEditQuoteIsPublic(activeQuote.isPublic);
     setIsEditingCard(true);
   };
 
-  const handleSaveEdit = () => {
-    if (!activeQuote || !editQuoteText.trim() || !editQuoteAuthor.trim()) return;
+  const handleSaveEdit = async () => {
+    if (!activeQuote || !editQuoteText.trim() || !userId || !hasRealQuotes) return;
 
-    if (activeQuote.isStandalone) {
-      setStandaloneQuotes(prev => prev.map(sq => {
-        if (sq.id === activeQuote.id) {
-          const updated = {
-            ...sq,
-            quote: editQuoteText.trim(),
-            author: editQuoteAuthor.trim(),
-            source: editQuoteSource.trim() || undefined
-          };
-          pushStandaloneQuote(updated);
-          return updated;
-        }
-        return sq;
-      }));
-    } else if (activeQuote.bookId && activeQuote.quoteIndexInReview !== undefined && onSaveReview) {
-      const reviewToUpdate = reviews.find(r => r.bookId === activeQuote.bookId);
-      if (reviewToUpdate && reviewToUpdate.quotes) {
-        const updatedQuotes = [...reviewToUpdate.quotes];
-        updatedQuotes[activeQuote.quoteIndexInReview] = editQuoteText.trim();
-        onSaveReview({
-          ...reviewToUpdate,
-          quotes: updatedQuotes,
-          updatedAt: new Date().toISOString()
-        });
-      }
-    }
-
+    const updated: Quote = {
+      ...activeQuote,
+      quote: editQuoteText.trim(),
+      author: editQuoteAuthor.trim() || undefined,
+      source: editQuoteSource.trim() || undefined,
+      isPublic: editQuoteIsPublic,
+    };
+    setQuotes(prev => prev.map(q => q.id === activeQuote.id ? updated : q));
+    await upsertQuote(updated, userId);
     setIsEditingCard(false);
   };
 
-  // Card Highlight Deletion
-  const handleConfirmDelete = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!activeQuote) return;
+  // Quick toggle from the card itself, no need to open the full editor
+  const handleToggleVisibility = async (item: Quote) => {
+    if (!userId || !hasRealQuotes) return;
+    const updated: Quote = { ...item, isPublic: !item.isPublic };
+    setQuotes(prev => prev.map(q => q.id === item.id ? updated : q));
+    await upsertQuote(updated, userId);
+  };
 
-    if (activeQuote.isStandalone) {
-      setStandaloneQuotes(prev => prev.filter(sq => sq.id !== activeQuote.id));
-      deleteStandaloneQuote(activeQuote.id);
-    } else if (activeQuote.bookId && activeQuote.quoteIndexInReview !== undefined && onSaveReview) {
-      const reviewToUpdate = reviews.find(r => r.bookId === activeQuote.bookId);
-      if (reviewToUpdate && reviewToUpdate.quotes) {
-        const updatedQuotes = reviewToUpdate.quotes.filter((_, idx) => idx !== activeQuote.quoteIndexInReview);
-        onSaveReview({
-          ...reviewToUpdate,
-          quotes: updatedQuotes,
-          updatedAt: new Date().toISOString()
-        });
-      }
-    }
+  // Card Highlight Deletion
+  const handleConfirmDelete = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!activeQuote || !hasRealQuotes) return;
+
+    setQuotes(prev => prev.filter(q => q.id !== activeQuote.id));
+    await deleteQuote(activeQuote.id);
 
     setShowDeleteConfirm(false);
     setIsEditingCard(false);
@@ -348,7 +233,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
           </div>
           <div>
             <h2 className="text-sm font-semibold text-gray-100 font-display">Quotes</h2>
-            <p className="text-[11px] text-[var(--color-text-muted)]">Card-swipe flashcard player to revisit or recall saved text highlights</p>
+            <p className="text-[11px] text-[var(--color-text-muted)]">Public by default, like a mini review - flip any quote to private if you'd rather keep it to yourself</p>
           </div>
         </div>
 
@@ -378,9 +263,9 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             Deck: {filteredQuotes.length} quotes {quoteSearchQuery && '(filtered)'}
           </span>
           <button
-            onClick={() => setIsAddingStandalone(!isAddingStandalone)}
+            onClick={() => setIsAddingQuote(!isAddingQuote)}
             className="p-1 px-2.5 py-1 bg-[#0f0e12] hover:bg-emerald-500/10 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 hover:border-emerald-500/40 rounded-lg text-[10px] uppercase font-extrabold flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
-            title="Add Standing Freeform Quote Highlight"
+            title="Add a Quote"
           >
             <Plus size={10} /> Add+
           </button>
@@ -412,9 +297,9 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
         />
       </div>
 
-      {/* Standalone Input Form Sliding Panel */}
+      {/* Add Quote Input Form Sliding Panel */}
       <AnimatePresence>
-        {isAddingStandalone && (
+        {isAddingQuote && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -422,7 +307,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
             className="w-full max-w-xl bg-app-card border border-brand-purple/35 rounded-xl p-4 sm:p-5 mb-5 text-left mx-auto shadow-2xl overflow-hidden relative"
           >
             <div className="text-[10px] font-mono uppercase font-black text-brand-turquoise/80 mb-2.5 tracking-widest flex items-center gap-1">
-              ✦ Transcribe Freeform Standalone Highlight
+              ✦ Add a Quote
             </div>
             <div className="space-y-3">
               <div>
@@ -447,7 +332,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[8.5px] uppercase font-bold text-[var(--color-text-muted)] mb-1">Origin/Title Clue (Optional)</label>
+                  <label className="block text-[8.5px] uppercase font-bold text-[var(--color-text-muted)] mb-1">Book/Show/Movie (Optional)</label>
                   <input
                     type="text"
                     value={newQuoteSource}
@@ -458,19 +343,34 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                 </div>
               </div>
 
+              {/* Public/Private toggle */}
+              <button
+                type="button"
+                onClick={() => setNewQuoteIsPublic(prev => !prev)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-app-base border border-app-border rounded-lg cursor-pointer"
+              >
+                <span className="flex items-center gap-2 text-[10px] font-bold text-[var(--color-text-main)]">
+                  {newQuoteIsPublic ? <Eye size={12} className="text-brand-turquoise" /> : <EyeOff size={12} className="text-[var(--color-text-muted)]" />}
+                  {newQuoteIsPublic ? 'Public - visible on your profile' : 'Private - only visible to you'}
+                </span>
+                <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full ${newQuoteIsPublic ? 'bg-brand-turquoise/15 text-brand-turquoise' : 'bg-white/5 text-[var(--color-text-muted)]'}`}>
+                  {newQuoteIsPublic ? 'Public' : 'Private'}
+                </span>
+              </button>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button
-                  onClick={() => setIsAddingStandalone(false)}
+                  onClick={() => setIsAddingQuote(false)}
                   className="px-3 py-1.5 text-[9px] font-bold text-[var(--color-text-muted)] hover:text-white uppercase"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSaveStandalone}
-                  disabled={!newQuoteText.trim() || !newQuoteAuthor.trim()}
+                  onClick={handleSaveNewQuote}
+                  disabled={!newQuoteText.trim()}
                   className="px-4 py-1.5 bg-gradient-to-tr from-emerald-800 to-emerald-600 text-[9.5px] font-black uppercase text-white rounded shadow-md disabled:opacity-40 transition-all cursor-pointer"
                 >
-                  Preserve Caption
+                  Save Quote
                 </button>
               </div>
             </div>
@@ -482,22 +382,32 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
         <div className="w-full max-w-2xl mx-auto mt-2 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredQuotes.map((item, index) => (
-              <div 
+              <div
                 key={item.id}
                 className="bg-[#09090B] border border-brand-purple/30 rounded-xl p-5 hover:border-brand-purple/70 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all flex flex-col justify-between relative group text-left min-h-[160px]"
               >
                 {/* Vintage decorative header */}
                 <div className="flex justify-between items-center text-brand-teal/50 text-[8px] font-mono tracking-widest uppercase border-b border-app-border/20 pb-2 mb-3">
-                  <span>✦ {item.isStandalone ? 'Standalone Caption' : 'Memoir Highlight'}</span>
+                  <span className="flex items-center gap-1">
+                    {item.isPublic ? <Eye size={9} /> : <EyeOff size={9} />} {item.isPublic ? 'Public' : 'Private'}
+                  </span>
                   <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleToggleVisibility(item)}
+                      className="p-1 text-[var(--color-text-muted)] hover:text-white hover:bg-white/5 rounded transition-colors cursor-pointer"
+                      title={item.isPublic ? 'Make Private' : 'Make Public'}
+                    >
+                      {item.isPublic ? <EyeOff size={11} /> : <Eye size={11} />}
+                    </button>
                     <button
                       onClick={() => {
                         setCurrentIndex(index);
                         setQuoteLayoutMode('deck');
                         setTimeout(() => {
                           setEditQuoteText(item.quote);
-                          setEditQuoteAuthor(item.bookAuthor);
-                          setEditQuoteSource(item.bookTitle);
+                          setEditQuoteAuthor(item.author || '');
+                          setEditQuoteSource(item.source || '');
+                          setEditQuoteIsPublic(item.isPublic);
                           setIsEditingCard(true);
                         }, 50);
                       }}
@@ -522,17 +432,19 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
 
                 {/* Body Quote */}
                 <p className="text-[11.5px] sm:text-[12.5px] font-serif leading-relaxed text-white italic flex-1">
-                  “{item.quote}”
+                  "{item.quote}"
                 </p>
 
                 {/* Footer Speaker Details */}
                 <div className="mt-3 pt-2.5 border-t border-app-border/20 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[10px] font-serif font-black uppercase tracking-wider text-brand-turquoise">
-                    — {item.bookAuthor}
-                  </span>
-                  {item.bookTitle && (
+                  {item.author && (
+                    <span className="text-[10px] font-serif font-black uppercase tracking-wider text-brand-turquoise">
+                      — {item.author}
+                    </span>
+                  )}
+                  {item.source && (
                     <span className="text-[9px] italic text-[#CAB9D4]/60">
-                      unearthing {item.bookTitle}
+                      from {item.source}
                     </span>
                   )}
                 </div>
@@ -560,10 +472,16 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
               >
                 {/* CARD TOOLBAR */}
                 <div className="flex justify-between items-center text-brand-purple/80 font-mono text-[7.5px] border-b border-app-border/20 pb-2 relative z-20">
-                  <span className="flex items-center gap-1 text-brand-turquoise/75 font-black uppercase tracking-widest font-mono">
-                    ✦ {activeQuote.isStandalone ? 'Standalone Caption' : 'Memoir Highlight'}
-                  </span>
-                  
+                  <button
+                    onClick={() => handleToggleVisibility(activeQuote)}
+                    disabled={!hasRealQuotes}
+                    className="flex items-center gap-1 text-brand-turquoise/75 font-black uppercase tracking-widest font-mono hover:text-brand-turquoise transition-colors cursor-pointer disabled:cursor-default"
+                    title={hasRealQuotes ? (activeQuote.isPublic ? 'Tap to make Private' : 'Tap to make Public') : undefined}
+                  >
+                    {activeQuote.isPublic ? <Eye size={9} /> : <EyeOff size={9} />}
+                    {activeQuote.isPublic ? 'Public' : 'Private'}
+                  </button>
+
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleBeginEdit}
@@ -609,10 +527,20 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                           type="text"
                           value={editQuoteSource}
                           onChange={(e) => setEditQuoteSource(e.target.value)}
-                          placeholder="Clue Source (Optional)"
+                          placeholder="Book/Show/Movie (Optional)"
                           className="bg-app-base border border-app-border text-white text-[10px] px-2 py-1 rounded"
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditQuoteIsPublic(prev => !prev)}
+                        className="w-full flex items-center justify-between px-2.5 py-1.5 mt-1 bg-app-base border border-app-border rounded cursor-pointer"
+                      >
+                        <span className="flex items-center gap-1.5 text-[9px] font-bold text-[var(--color-text-main)]">
+                          {editQuoteIsPublic ? <Eye size={10} className="text-brand-turquoise" /> : <EyeOff size={10} className="text-[var(--color-text-muted)]" />}
+                          {editQuoteIsPublic ? 'Public' : 'Private'}
+                        </span>
+                      </button>
                       <div className="flex justify-end gap-1.5 mt-2">
                         <button
                           onClick={() => setIsEditingCard(false)}
@@ -633,21 +561,23 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
                     <div className="flex-1 flex flex-col justify-between h-full relative z-10 text-center">
                       {/* Generous centered quote text style */}
                       <div className="flex-1 flex items-center justify-center text-center py-2 px-1">
-                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-purple/30 leading-none select-none absolute top-0">“</blockquote>
+                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-purple/30 leading-none select-none absolute top-0">"</blockquote>
                         <blockquote className="text-xs sm:text-[13px] md:text-[14.5px] font-medium font-serif leading-relaxed text-[#E2D8F0] italic select-all break-words max-h-[110px] overflow-y-auto pr-1 drop-shadow-[0_0_8px_rgba(226,216,240,0.3)]">
                           {activeQuote.quote}
                         </blockquote>
-                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-purple/30 leading-none select-none absolute bottom-5">”</blockquote>
+                        <blockquote className="text-xs sm:text-[14px] md:text-[15px] font-semibold text-brand-purple/30 leading-none select-none absolute bottom-5">"</blockquote>
                       </div>
 
                       {/* Editorial Footnote attribution */}
                       <div className="mt-auto border-t border-app-border/30 pt-3.5">
-                        <span className="block text-[10px] sm:text-[11px] font-serif font-black uppercase tracking-widest text-brand-turquoise select-none">
-                          — {activeQuote.bookAuthor}
-                        </span>
-                        {activeQuote.bookTitle && (
+                        {activeQuote.author && (
+                          <span className="block text-[10px] sm:text-[11px] font-serif font-black uppercase tracking-widest text-brand-turquoise select-none">
+                            — {activeQuote.author}
+                          </span>
+                        )}
+                        {activeQuote.source && (
                           <span className="block text-[9px] italic text-[#CAB9D4]/60 mt-0.5 tracking-wider select-none">
-                            unearthing {activeQuote.bookTitle}
+                            from {activeQuote.source}
                           </span>
                         )}
                       </div>
@@ -721,7 +651,7 @@ export function QuoteDeck({ books, reviews, onSaveReview }: QuoteDeckProps) {
         <div className="text-center py-10 bg-app-card rounded-xl border border-dashed border-brand-teal/20 flex flex-col items-center max-w-xl mx-auto">
           <BookMarked size={28} className="text-brand-teal/40 mb-2" />
           <span className="text-[11px] text-white font-bold uppercase font-display">No Highlights Exist</span>
-          
+
         </div>
       )}
     </div>

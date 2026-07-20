@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MediaItem, MediaLog, MediaReview } from '../types';
-import { X, Star, Calendar, Plus, Trash2, Edit3, Loader2, Sparkles, Check, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { X, Star, Calendar, Plus, Trash2, Edit3, Loader2, Sparkles, Check, ChevronLeft, ChevronRight, Share2, Lock, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
 import { supabase } from '../utils/supabaseClient';
 
@@ -33,6 +33,9 @@ export function MediaDetailModal({
 }: MediaDetailModalProps) {
   const [rating, setRating] = useState(review?.rating || 0);
   const [notes, setNotes] = useState(review?.notes || '');
+  const [reviewIsPublic, setReviewIsPublic] = useState(review?.isPublic ?? true);
+  const [saveStateText, setSaveStateText] = useState(item.notes || '');
+  const [saveStateSuccess, setSaveStateSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'review' | 'dates'>(
     (item.overview || (item.cast && item.cast.length > 0) || (item.episodes && item.episodes.length > 0) || item.description) ? 'info' : 'review'
   );
@@ -89,37 +92,42 @@ export function MediaDetailModal({
       mediaId: item.id,
       rating,
       notes,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      isPublic: reviewIsPublic,
     });
-    setSuccessMsg("Review Saved.");
+    setSuccessMsg(reviewIsPublic ? "Review posted publicly!" : "Review saved - Only Me");
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
+
+  const handleSaveSaveState = () => {
+    onUpdateMediaItem({ ...item, notes: saveStateText });
+    setSaveStateSuccess(true);
+    setTimeout(() => setSaveStateSuccess(false), 2000);
+  };
+
+  // Moves the review's text into the private SaveState note instead.
+  const handleMoveReviewToSaveState = () => {
+    if (!notes.trim()) return;
+    const ratingLine = rating > 0 ? `${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}\n\n` : '';
+    const combined = saveStateText
+      ? `${saveStateText}\n\n${ratingLine}${notes}`
+      : `${ratingLine}${notes}`;
+    onUpdateMediaItem({ ...item, notes: combined });
+    setSaveStateText(combined);
+    setNotes('');
+    setRating(0);
+    onSaveReview({
+      mediaId: item.id,
+      rating: 0,
+      notes: '',
+      updatedAt: new Date().toISOString(),
+      isPublic: false,
+    });
+    setSuccessMsg('Moved to your SaveState!');
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   const itemLogs = mediaLogs.filter(log => log.mediaId === item.id);
-  const isCompleted = itemLogs.some(log => log.status === 'completed');
-
-  const handleSharePublicly = async () => {
-    if (!isCompleted) return;
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { error } = await supabase.from('public_reviews').upsert({
-        user_id: session.user.id,
-        media_id: item.id,
-        media_type: item.type,
-        media_title: item.title,
-        media_cover_url: item.coverUrl || '',
-        rating: rating,
-        review_text: notes,
-        updated_at: new Date().toISOString(),
-      });
-      if (error) throw error;
-      setSuccessMsg('Review shared to the community!');
-      setTimeout(() => setSuccessMsg(null), 3500);
-    } catch (err: any) {
-      console.error("Failed to share:", err);
-    }
-  };
 
   // Default Quick Add Log setup
   const [logStatus, setLogStatus] = useState<'backlog' | 'active' | 'completed' | 'dnf'>('completed');
@@ -295,8 +303,47 @@ export function MediaDetailModal({
             )}
             {activeTab === 'review' && (
               <div className="space-y-6">
-                <div>
-                  <label className="block text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Rating</label>
+                {/* PRIVATE SAVESTATE SECTION */}
+                <div className="space-y-1.5 bg-black/20 border border-app-border rounded-lg p-3.5">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+                      <Lock size={11} /> SaveState (Private)
+                    </label>
+                    <span className="text-[8px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider">Only visible to you</span>
+                  </div>
+                  <textarea
+                    value={saveStateText}
+                    onChange={(e) => setSaveStateText(e.target.value)}
+                    placeholder="Spoilers, theories, where you left off - just for you..."
+                    className="w-full h-24 bg-[#141417] border border-app-border rounded-lg p-3 text-sm text-[var(--color-text-main)] focus:outline-hidden resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSaveSaveState}
+                      className="px-3 py-1.5 bg-app-base border border-app-border hover:border-brand-purple/50 text-[var(--color-text-main)] font-bold text-[10px] rounded-lg transition-colors cursor-pointer"
+                    >
+                      {saveStateSuccess ? 'Saved!' : 'Save SaveState'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* PUBLIC REVIEW SECTION */}
+                <div className="space-y-1.5 bg-black/20 border border-app-border rounded-lg p-3.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Review</label>
+                    <button
+                      type="button"
+                      onClick={() => setReviewIsPublic(prev => !prev)}
+                      className="flex items-center gap-1.5 text-[9px] font-black uppercase px-2 py-1 rounded-full cursor-pointer transition-colors"
+                      style={{
+                        backgroundColor: reviewIsPublic ? 'rgba(7,161,249,0.12)' : 'rgba(255,255,255,0.05)',
+                        color: reviewIsPublic ? 'var(--color-brand-turquoise, #07a1f9)' : 'var(--color-text-muted)'
+                      }}
+                    >
+                      {reviewIsPublic ? 'Public' : 'Only Me'}
+                    </button>
+                  </div>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -304,38 +351,36 @@ export function MediaDetailModal({
                         onClick={() => setRating(star)}
                         className="p-1 focus:outline-hidden cursor-pointer"
                       >
-                        <Star 
-                          size={24} 
-                          className={star <= rating ? "fill-brand-purple text-brand-purple" : "text-gray-600"} 
+                        <Star
+                          size={24}
+                          className={star <= rating ? "fill-brand-purple text-brand-purple" : "text-gray-600"}
                         />
                       </button>
                     ))}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider mb-2">My Review & Notes</label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Write your thoughts..."
-                    className="w-full h-32 bg-[#141417] border border-app-border rounded-lg p-3 text-sm text-[var(--color-text-main)] focus:outline-hidden resize-none"
+                    placeholder={reviewIsPublic ? "Write a review anyone can see..." : "Write a review only you can see..."}
+                    className="w-full h-32 bg-[#141417] border border-app-border rounded-lg p-3 text-sm text-[var(--color-text-main)] focus:outline-hidden resize-none mt-2"
                   />
-                  <div className="mt-2 flex justify-end gap-2">
-                    {isCompleted && (
+                  <div className="mt-2 flex justify-end gap-2 flex-wrap">
+                    {notes.trim().length > 0 && (
                       <button
                         type="button"
-                        onClick={handleSharePublicly}
-                        className="px-4 py-1.5 bg-app-base border border-brand-purple/40 hover:bg-brand-purple/10 text-brand-purple font-bold text-xs rounded-md transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                        onClick={handleMoveReviewToSaveState}
+                        title="Move this review's text into your private SaveState note instead"
+                        className="px-3 py-1.5 bg-transparent border border-app-border hover:border-brand-purple/50 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] font-bold text-xs rounded-md transition-colors cursor-pointer flex items-center gap-1.5"
                       >
-                        <Share2 size={13} /> Share Publicly
+                        <Lock size={12} /> Move to SaveState
                       </button>
                     )}
                     <button
                       onClick={handleSaveNotes}
-                      className="px-4 py-1.5 bg-white text-black font-bold text-xs rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
+                      className="px-4 py-1.5 bg-white text-black font-bold text-xs rounded-md hover:bg-gray-200 transition-colors cursor-pointer flex items-center gap-1.5"
                     >
-                      Save Review
+                      <Share2 size={13} /> {reviewIsPublic ? 'Post Public Review' : 'Save Review (Only Me)'}
                     </button>
                   </div>
                 </div>
