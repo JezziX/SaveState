@@ -17,6 +17,8 @@ import { SavePoint } from './types';
 import { CommunityFeed } from "./components/CommunityFeed";
 import { UserProfile } from "./components/UserProfile";
 import { ProfileDrawer } from "./components/ProfileDrawer";
+import { getBookPoints, getMediaPoints } from './utils/points';
+import { getLevelInfo } from './utils/levels';
 import { InstallGuide } from "./components/InstallGuide";
 import { Users } from "lucide-react";
 import { BookOpen, Calendar, Star, Plus, Minus, Trophy, Sparkles, ChevronDown, ChevronUp, Share2, Pencil, Check, BarChart2, BookMarked, Quote, ArrowUp, ArrowDown, Settings, Headphones, Film, Tv, User } from 'lucide-react';
@@ -491,6 +493,28 @@ export default function App() {
   const currentYear = new Date().getFullYear();
   
   // Directly links completed logs to any finish date within the current year
+  const getBookStatusForXp = (bookId: string): 'backlog' | 'active' | 'completed' | 'dnf' => {
+    const logs = readingLogs.filter(l => l.bookId === bookId);
+    if (logs.some(l => l.status === 'completed')) return 'completed';
+    if (logs.some(l => l.status === 'dnf')) return 'dnf';
+    if (logs.some(l => l.status === 'active')) return 'active';
+    return 'backlog';
+  };
+
+  const getMediaStatusForXp = (mediaId: string): 'backlog' | 'active' | 'completed' | 'dnf' => {
+    const logs = mediaLogs.filter(l => l.mediaId === mediaId);
+    if (logs.some(l => l.status === 'completed')) return 'completed';
+    if (logs.some(l => l.status === 'dnf')) return 'dnf';
+    if (logs.some(l => l.status === 'active')) return 'active';
+    return 'backlog';
+  };
+
+  // Global total XP across every book + media item - powers the persistent
+  // Level/XP HUD under the app title. See utils/levels.ts for the 25-level matrix.
+  const totalXp = books.reduce((sum, b) => sum + getBookPoints(b, getBookStatusForXp(b.id)), 0)
+    + mediaItems.reduce((sum, m) => sum + getMediaPoints(m, getMediaStatusForXp(m.id)), 0);
+  const levelInfo = getLevelInfo(totalXp);
+
   const completedThisYearLogs = readingLogs.filter(log => {
     return log.status === 'completed' && log.endDate && log.endDate.startsWith(String(currentYear));
   });
@@ -857,9 +881,18 @@ export default function App() {
                 )}
                 <div className="flex items-center gap-3 group/name pl-1 md:pl-0">
                   <img src="/icon-512-any.png" alt="SaveState Logo" className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-[0_0_12px_rgba(215,33,249,0.35)]" />
-                  <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
-                    {userName ? `${userName}'s ` : 'My '}SaveState
-                  </h1>
+                  <div className="flex flex-col items-center">
+                    <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-main)] tracking-tight font-display">
+                      {userName ? `${userName}'s ` : 'My '}SaveState
+                    </h1>
+                    {/* Persistent Level/XP HUD - always visible, centered under the title */}
+                    <div className="points-wrap text-[13px] sm:text-[15px] leading-none mt-1">
+                      <span className="points-underline-glow" />
+                      <span className="points-badge">
+                        <span className="points-badge-inner">LVL {levelInfo.level} &middot; {levelInfo.currentXp.toLocaleString()} XP</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
