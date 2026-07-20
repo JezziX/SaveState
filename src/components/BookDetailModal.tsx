@@ -168,10 +168,25 @@ export function BookDetailModal({
     return () => clearTimeout(delay);
   }, [catQuery, activeTab]);
 
-  // Overwrite keeping original book ID exactly the same to preserve child dependencies
+  // Overwrite keeping original book ID exactly the same to preserve child dependencies.
+  // IMPORTANT: catalogBook comes from Open Library and has no concept of the
+  // user's reading state (startDate/endDate/didNotFinish/progress/notes). We
+  // must start from the existing `book` and only layer the catalog metadata
+  // on top - otherwise those fields get wiped, which silently drops the book
+  // out of its reading-log status (since status is derived from these dates)
+  // and makes it disappear from shelves like "Completed" and the goal tracker.
   const handleOverwriteFromCatalog = (catalogBook: Book) => {
     const overwritten: Book = {
-      ...catalogBook,
+      ...book,
+      title: catalogBook.title,
+      author: catalogBook.author,
+      coverUrl: catalogBook.coverUrl,
+      publishYear: catalogBook.publishYear,
+      pages: catalogBook.pages,
+      subjects: catalogBook.subjects,
+      isbn: catalogBook.isbn,
+      genre: catalogBook.genre,
+      description: catalogBook.description,
       id: book.id, // CRITICAL: preserve ID to keep dates log & reviews linked
     };
     onUpdateBook(overwritten);

@@ -1,212 +1,209 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
   <defs>
-    <!-- Background Gradient for 3D Room Depth -->
-    <radialGradient id="dense-room-lighting" cx="50%" cy="50%" r="75%">
-      <stop offset="0%" stop-color="#181840" />
-      <stop offset="60%" stop-color="#0A0A1C" />
-      <stop offset="100%" stop-color="#030308" />
+    <!-- Deep Cyber Room Radial Gradient -->
+    <radialGradient id="cyber-room-lighting" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#1B1B48" />
+      <stop offset="50%" stop-color="#0A0A1C" />
+      <stop offset="100%" stop-color="#020206" />
     </radialGradient>
 
-    <!-- Heavy Cartoon Neon Glow Filters -->
-    <filter id="glow-cyan-dense" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
+    <!-- Supercharged Intense Neon Bloom Filters -->
+    <filter id="intense-cyan-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1" />
+      <feGaussianBlur stdDeviation="3" result="blur2" />
       <feMerge>
-        <feMergeNode in="blur" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
 
-    <filter id="glow-magenta-dense" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
+    <filter id="intense-magenta-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1" />
+      <feGaussianBlur stdDeviation="3" result="blur2" />
       <feMerge>
-        <feMergeNode in="blur" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
 
-    <filter id="glow-yellow-dense" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
+    <filter id="intense-yellow-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1" />
+      <feGaussianBlur stdDeviation="3" result="blur2" />
       <feMerge>
-        <feMergeNode in="blur" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
         <feMergeNode in="SourceGraphic" />
       </feMerge>
     </filter>
 
-    <filter id="glow-lavender-dense" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
+    <!-- Cyberpunk Hazard Stripe Pattern -->
+    <pattern id="hazard-stripes" width="20" height="20" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="10" height="20" fill="#FFE600" />
+      <rect x="10" width="10" height="20" fill="#050510" />
+    </pattern>
   </defs>
 
-  <!-- 1. DEEP NAVY CANVAS & 3D ROOM MATRIX -->
-  <rect width="1440" height="900" fill="url(#dense-room-lighting)" />
+  <!-- 1. BASE CANVAS & DARK CYBER ROOM -->
+  <rect width="1440" height="900" fill="url(#cyber-room-lighting)" />
 
-  <!-- 3D Perspective Wall Corner Seams (Dashed Retro Style) -->
-  <rect x="250" y="150" width="940" height="600" fill="none" stroke="#222258" stroke-width="3" rx="16" stroke-dasharray="8 8" opacity="0.6" />
-  <line x1="0" y1="0" x2="250" y2="150" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
-  <line x1="1440" y1="0" x2="1190" y2="150" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
-  <line x1="0" y1="900" x2="250" y2="750" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
-  <line x1="1440" y1="900" x2="1190" y2="750" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
-
-  <!-- 2. UNDER-LAYER CIRCUIT TRACES (Bottom Weave) -->
-
-  <!-- YELLOW BASE TRACE (Floor -> Left Wall Loop) -->
-  <g filter="url(#glow-yellow-dense)">
-    <path d="M 180,910 L 180,740 Q 180,710 210,710 L 520,710 Q 550,710 550,680 L 550,440 Q 550,410 520,410 L 340,410 Q 310,410 310,380 L 310,260 Q 310,230 340,230 L 640,230" 
-          fill="none" stroke="#050510" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M 180,910 L 180,740 Q 180,710 210,710 L 520,710 Q 550,710 550,680 L 550,440 Q 550,410 520,410 L 340,410 Q 310,410 310,380 L 310,260 Q 310,230 340,230 L 640,230" 
-          fill="none" stroke="#FFE600" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-    <circle cx="640" cy="230" r="12" fill="#050510" />
-    <circle cx="640" cy="230" r="8" fill="#FFE600" />
-    <circle cx="637" cy="227" r="2.5" fill="#FFFFFF" />
+  <!-- Technical Background Grid Overlay -->
+  <g stroke="#1A1A40" stroke-width="1" opacity="0.4">
+    <path d="M 0,150 L 1440,150 M 0,300 L 1440,300 M 0,450 L 1440,450 M 0,600 L 1440,600 M 0,750 L 1440,750" />
+    <path d="M 240,0 L 240,900 M 480,0 L 480,900 M 720,0 L 720,900 M 960,0 L 960,900 M 1200,0 L 1200,900" />
   </g>
 
-  <!-- LAVENDER BASE TRACE (Right Wall -> Ceiling Loop) -->
-  <g filter="url(#glow-lavender-dense)">
-    <path d="M 1450,420 L 1120,420 Q 1090,420 1090,390 L 1090,200 Q 1090,170 1060,170 L 680,170 Q 650,170 650,200 L 650,310" 
-          fill="none" stroke="#050510" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M 1450,420 L 1120,420 Q 1090,420 1090,390 L 1090,200 Q 1090,170 1060,170 L 680,170 Q 650,170 650,200 L 650,310" 
-          fill="none" stroke="#D7B0FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-    <circle cx="650" cy="310" r="11" fill="#050510" />
-    <circle cx="650" cy="310" r="7" fill="#D7B0FF" />
-    <circle cx="648" cy="308" r="2" fill="#FFFFFF" />
+  <!-- 3D Angular Perspective Seams (Octagonal Back Frame) -->
+  <polygon points="260,160 1180,160 1180,740 260,740" fill="none" stroke="#2A2A66" stroke-width="2" stroke-dasharray="6 6" />
+  <line x1="0" y1="0" x2="260" y2="160" stroke="#00F0FF" stroke-width="2" opacity="0.4" />
+  <line x1="1440" y1="0" x2="1180" y2="160" stroke="#F90072" stroke-width="2" opacity="0.4" />
+  <line x1="0" y1="900" x2="260" y2="740" stroke="#FFE600" stroke-width="2" opacity="0.4" />
+  <line x1="1440" y1="900" x2="1180" y2="740" stroke="#D7B0FF" stroke-width="2" opacity="0.4" />
+
+  <!-- Laser-Etched Corner Distance Ticks -->
+  <g stroke="#00F0FF" stroke-width="1.5" opacity="0.6">
+    <path d="M 50,30 L 60,37 M 70,42 L 80,49 M 90,54 L 100,61" />
+    <path d="M 1390,30 L 1380,37 M 1370,42 L 1360,49 M 1350,54 L 1340,61" />
   </g>
 
-  <!-- 3. MIDDLE-LAYER ACCESSORIES (Under top crossing lines) -->
+  <!-- 2. UNDERPASS CIRCUIT TRACES (Bottom Network Layer) -->
 
-  <!-- CARTOON DIP SWITCH BOX (Mounted on Left Wall) -->
-  <g transform="translate(320, 692)">
-    <rect x="-3" y="-3" width="54" height="34" rx="6" fill="#050510" />
-    <rect x="0" y="0" width="48" height="28" rx="4" fill="#F90072" stroke="#050510" stroke-width="1.5" />
-    <!-- White Switches -->
-    <rect x="6" y="4" width="6" height="20" rx="2" fill="#050510" />
-    <rect x="6" y="4" width="6" height="10" rx="1" fill="#FFFFFF" />
-    <rect x="16" y="4" width="6" height="20" rx="2" fill="#050510" />
-    <rect x="16" y="14" width="6" height="10" rx="1" fill="#FFFFFF" />
-    <rect x="26" y="4" width="6" height="20" rx="2" fill="#050510" />
-    <rect x="26" y="4" width="6" height="10" rx="1" fill="#FFFFFF" />
-    <rect x="36" y="4" width="6" height="20" rx="2" fill="#050510" />
-    <rect x="36" y="14" width="6" height="10" rx="1" fill="#FFFFFF" />
+  <!-- YELLOW HIGH-VOLTAGE TRACE -->
+  <g filter="url(#intense-yellow-glow)">
+    <!-- Black Outer Ink -->
+    <path d="M 180,910 L 180,760 Q 180,740 200,740 L 520,740 Q 540,740 540,720 L 540,460 Q 540,440 520,440 L 320,440 Q 300,440 300,420 L 300,280 Q 300,260 320,260 L 680,260" 
+          fill="none" stroke="#000000" stroke-width="14" stroke-linecap="square" stroke-linejoin="round" />
+    <!-- Vivid Yellow Halo -->
+    <path d="M 180,910 L 180,760 Q 180,740 200,740 L 520,740 Q 540,740 540,720 L 540,460 Q 540,440 520,440 L 320,440 Q 300,440 300,420 L 300,280 Q 300,260 320,260 L 680,260" 
+          fill="none" stroke="#FFE600" stroke-width="7" stroke-linecap="square" stroke-linejoin="round" />
+    <!-- Laser White Hot Center Core -->
+    <path d="M 180,910 L 180,760 Q 180,740 200,740 L 520,740 Q 540,740 540,720 L 540,460 Q 540,440 520,440 L 320,440 Q 300,440 300,420 L 300,280 Q 300,260 320,260 L 680,260" 
+          fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="square" stroke-linejoin="round" />
+
+    <!-- Octagonal Solder Pad Terminal -->
+    <polygon points="680,248 692,260 692,272 680,284 668,284 656,272 656,260 668,248" fill="#000000" stroke="#FFE600" stroke-width="2" />
+    <circle cx="674" cy="266" r="4" fill="#FFFFFF" />
   </g>
 
-  <!-- STRIPED RESISTOR PILL #1 -->
-  <g transform="translate(410, 401)">
-    <rect x="-2" y="-2" width="40" height="20" rx="10" fill="#050510" />
-    <rect x="0" y="0" width="36" height="16" rx="8" fill="#E8D5B5" stroke="#050510" stroke-width="1.5" />
-    <rect x="6" y="0" width="4" height="16" fill="#00F0FF" />
-    <rect x="14" y="0" width="4" height="16" fill="#F90072" />
-    <rect x="22" y="0" width="4" height="16" fill="#FFE600" />
+  <!-- LAVENDER DATA BUS TRACE -->
+  <g filter="url(#intense-magenta-glow)">
+    <path d="M 1450,440 L 1120,440 Q 1100,440 1100,420 L 1100,220 Q 1100,200 1080,200 L 640,200 Q 620,200 620,220 L 620,340" 
+          fill="none" stroke="#000000" stroke-width="12" stroke-linecap="square" stroke-linejoin="round" />
+    <path d="M 1450,440 L 1120,440 Q 1100,440 1100,420 L 1100,220 Q 1100,200 1080,200 L 640,200 Q 620,200 620,220 L 620,340" 
+          fill="none" stroke="#D7B0FF" stroke-width="6" stroke-linecap="square" stroke-linejoin="round" />
+    <path d="M 1450,440 L 1120,440 Q 1100,440 1100,420 L 1100,220 Q 1100,200 1080,200 L 640,200 Q 620,200 620,220 L 620,340" 
+          fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="square" stroke-linejoin="round" />
+
+    <polygon points="620,330 630,340 630,350 620,360 610,360 600,350 600,340 610,330" fill="#000000" stroke="#D7B0FF" stroke-width="2" />
+    <circle cx="615" cy="345" r="3" fill="#FFFFFF" />
   </g>
 
-  <!-- 4. OVER-LAYER CIRCUIT TRACES (Tangled Crossing Lines) -->
+  <!-- 3. OVERPASS CROSSING TRACES (Tangled Dense Top Layer) -->
 
-  <!-- CYAN CROSSING TRACE (Tangles over Yellow & Lavender) -->
-  <g filter="url(#glow-cyan-dense)">
-    <path d="M -10,310 L 190,310 Q 220,310 220,340 L 220,520 Q 220,550 250,550 L 440,550 Q 470,550 470,520 L 470,300 Q 470,270 500,270 L 820,270 Q 850,270 850,300 L 850,480" 
-          fill="none" stroke="#050510" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M -10,310 L 190,310 Q 220,310 220,340 L 220,520 Q 220,550 250,550 L 440,550 Q 470,550 470,520 L 470,300 Q 470,270 500,270 L 820,270 Q 850,270 850,300 L 850,480" 
-          fill="none" stroke="#00F0FF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-    <circle cx="850" cy="480" r="14" fill="#050510" />
-    <circle cx="850" cy="480" r="10" fill="#00F0FF" />
-    <circle cx="847" cy="477" r="3" fill="#FFFFFF" />
+  <!-- CYAN PRIMARY HIGH-SPEED TRACE -->
+  <g filter="url(#intense-cyan-glow)">
+    <!-- Heavy Outer Black Bridge Clipping Stroke -->
+    <path d="M -10,320 L 220,320 Q 240,320 240,340 L 240,540 Q 240,560 260,560 L 460,560 Q 480,560 480,540 L 480,320 Q 480,300 500,300 L 860,300 Q 880,300 880,320 L 880,500" 
+          fill="none" stroke="#000000" stroke-width="16" stroke-linecap="square" stroke-linejoin="round" />
+    <!-- Electric Cyan Halo -->
+    <path d="M -10,320 L 220,320 Q 240,320 240,340 L 240,540 Q 240,560 260,560 L 460,560 Q 480,560 480,540 L 480,320 Q 480,300 500,300 L 860,300 Q 880,300 880,320 L 880,500" 
+          fill="none" stroke="#00F0FF" stroke-width="8" stroke-linecap="square" stroke-linejoin="round" />
+    <!-- Pure White Hot Laser Center -->
+    <path d="M -10,320 L 220,320 Q 240,320 240,340 L 240,540 Q 240,560 260,560 L 460,560 Q 480,560 480,540 L 480,320 Q 480,300 500,300 L 860,300 Q 880,300 880,320 L 880,500" 
+          fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="round" />
+
+    <polygon points="880,488 894,500 894,512 880,524 866,524 852,512 852,500 866,488" fill="#000000" stroke="#00F0FF" stroke-width="2" />
+    <circle cx="873" cy="506" r="4" fill="#FFFFFF" />
   </g>
 
-  <!-- MAGENTA CROSSING TRACE (Drops Top Ceiling -> Crosses Cyan & Yellow) -->
-  <g filter="url(#glow-magenta-dense)">
-    <path d="M 420,-10 L 420,140 Q 420,170 390,170 L 270,170 Q 240,170 240,200 L 240,460 Q 240,490 270,490 L 720,490 Q 750,490 750,520 L 750,660 Q 750,690 780,690 L 980,690" 
-          fill="none" stroke="#050510" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M 420,-10 L 420,140 Q 420,170 390,170 L 270,170 Q 240,170 240,200 L 240,460 Q 240,490 270,490 L 720,490 Q 750,490 750,520 L 750,660 Q 750,690 780,690 L 980,690" 
-          fill="none" stroke="#F90072" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-    <circle cx="980" cy="690" r="14" fill="#050510" />
-    <circle cx="980" cy="690" r="10" fill="#F90072" />
-    <circle cx="977" cy="687" r="3" fill="#FFFFFF" />
+  <!-- MAGENTA LASER TRACE (Tangles Top -> Bottom Right) -->
+  <g filter="url(#intense-magenta-glow)">
+    <path d="M 440,-10 L 440,140 Q 440,160 420,160 L 260,160 Q 240,160 240,180 L 240,480 Q 240,500 260,500 L 740,500 Q 760,500 760,520 L 760,680 Q 760,700 780,700 L 1020,700" 
+          fill="none" stroke="#000000" stroke-width="16" stroke-linecap="square" stroke-linejoin="round" />
+    <path d="M 440,-10 L 440,140 Q 440,160 420,160 L 260,160 Q 240,160 240,180 L 240,480 Q 240,500 260,500 L 740,500 Q 760,500 760,520 L 760,680 Q 760,700 780,700 L 1020,700" 
+          fill="none" stroke="#F90072" stroke-width="8" stroke-linecap="square" stroke-linejoin="round" />
+    <path d="M 440,-10 L 440,140 Q 440,160 420,160 L 260,160 Q 240,160 240,180 L 240,480 Q 240,500 260,500 L 740,500 Q 760,500 760,520 L 760,680 Q 760,700 780,700 L 1020,700" 
+          fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="round" />
+
+    <polygon points="1020,688 1034,700 1034,712 1020,724 1006,724 992,712 992,700 1006,688" fill="#000000" stroke="#F90072" stroke-width="2" />
+    <circle cx="1013" cy="706" r="4" fill="#FFFFFF" />
   </g>
 
-  <!-- SECONDARY TANGLED CYAN & MAGENTA LOOP (Back Wall Right) -->
-  <g filter="url(#glow-yellow-dense)">
-    <path d="M 1280,910 L 1280,780 Q 1280,750 1250,750 L 920,750 Q 890,750 890,720 L 890,580 Q 890,550 920,550 L 1160,550 Q 1190,550 1190,520 L 1190,320 Q 1190,290 1160,290 L 960,290" 
-          fill="none" stroke="#050510" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
-    <path d="M 1280,910 L 1280,780 Q 1280,750 1250,750 L 920,750 Q 890,750 890,720 L 890,580 Q 890,550 920,550 L 1160,550 Q 1190,550 1190,520 L 1190,320 Q 1190,290 1160,290 L 960,290" 
-          fill="none" stroke="#FFE600" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-    <circle cx="960" cy="290" r="12" fill="#050510" />
-    <circle cx="960" cy="290" r="8" fill="#FFE600" />
-    <circle cx="958" cy="288" r="2.5" fill="#FFFFFF" />
+  <!-- DUAL PARALLEL CYBER RIBBON (Cyan/Yellow Parallel Line) -->
+  <g filter="url(#intense-cyan-glow)">
+    <path d="M 1260,910 L 1260,760 Q 1260,740 1240,740 L 940,740 Q 920,740 920,720 L 920,600 Q 920,580 940,580 L 1200,580 Q 1220,580 1220,560 L 1220,340 Q 1220,320 1200,320 L 980,320" 
+          fill="none" stroke="#000000" stroke-width="12" stroke-linecap="square" stroke-linejoin="round" />
+    <path d="M 1260,910 L 1260,760 Q 1260,740 1240,740 L 940,740 Q 920,740 920,720 L 920,600 Q 920,580 940,580 L 1200,580 Q 1220,580 1220,560 L 1220,340 Q 1220,320 1200,320 L 980,320" 
+          fill="none" stroke="#00F0FF" stroke-width="5" stroke-linecap="square" stroke-linejoin="round" />
+    <path d="M 1260,910 L 1260,760 Q 1260,740 1240,740 L 940,740 Q 920,740 920,720 L 920,600 Q 920,580 940,580 L 1200,580 Q 1220,580 1220,560 L 1220,340 Q 1220,320 1200,320 L 980,320" 
+          fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="round" />
   </g>
 
-  <!-- 5. TOP-LAYER HARDWARE ACCESSORIES -->
+  <!-- 4. HIGH-TECH HARDWARE ACCESSORIES & EDGY DECALS -->
 
-  <!-- RETRO VACUUM TUBE (Glowing Tube on Right Wall) -->
-  <g transform="translate(1160, 380)">
-    <!-- Black Outer Border -->
-    <rect x="-4" y="-4" width="44" height="74" rx="18" fill="#050510" />
-    <!-- Glass Bulb Outer Body -->
-    <rect x="0" y="0" width="36" height="66" rx="16" fill="#121230" stroke="#FFE600" stroke-width="2.5" opacity="0.9" />
-    <!-- Inner Glowing Filament Coils -->
-    <path d="M 12,50 L 12,24 L 18,14 L 24,24 L 24,50" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" />
-    <circle cx="18" cy="14" r="4" fill="#F90072" />
-    <!-- Metallic Socket Base -->
-    <rect x="-2" y="52" width="40" height="14" rx="4" fill="#050510" stroke="#D7B0FF" stroke-width="2" />
-    <!-- Glass Highlight Reflection -->
-    <path d="M 6,10 Q 6,30 10,48" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+  <!-- EDGY CYBERPUNK PROCESSOR DIE (Center Back Wall) -->
+  <g transform="translate(780, 430)">
+    <!-- Heavy Black Base & Cyan Outer Frame -->
+    <rect x="-6" y="-6" width="92" height="72" rx="8" fill="#000000" />
+    <rect x="0" y="0" width="80" height="60" rx="6" fill="#0A0A20" stroke="#00F0FF" stroke-width="3" />
+    
+    <!-- Metallic Heat Sink Fins (Top & Bottom) -->
+    <path d="M 10,-10 L 10,0 M 25,-10 L 25,0 M 40,-10 L 40,0 M 55,-10 L 55,0 M 70,-10 L 70,0" stroke="#D7B0FF" stroke-width="3" stroke-linecap="round" />
+    <path d="M 10,60 L 10,70 M 25,60 L 25,70 M 40,60 L 40,70 M 55,60 L 55,70 M 70,60 L 70,70" stroke="#D7B0FF" stroke-width="3" stroke-linecap="round" />
+
+    <!-- Glowing Magenta Silicon Core -->
+    <rect x="20" y="12" width="40" height="36" rx="4" fill="#180415" stroke="#F90072" stroke-width="2" />
+    <rect x="28" y="20" width="24" height="20" rx="2" fill="#F90072" filter="url(#intense-magenta-glow)" />
+    
+    <!-- Tech Label Callout -->
+    <text x="40" y="54" font-family="monospace" font-size="6" font-weight="bold" fill="#FFE600" text-anchor="middle" letter-spacing="1">CORE_FX-9000</text>
   </g>
 
-  <!-- GLASS FILAMENT FUSE (Mounted on Top Center Ceiling) -->
-  <g transform="translate(720, 158)">
-    <rect x="-2" y="-2" width="52" height="24" rx="6" fill="#050510" />
-    <!-- Clear Glass Tube -->
-    <rect x="0" y="0" width="48" height="20" rx="4" fill="#0A0A1C" stroke="#00F0FF" stroke-width="1.5" />
-    <!-- Metallic End Caps -->
-    <rect x="0" y="0" width="10" height="20" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <rect x="38" y="0" width="10" height="20" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <!-- Glowing Magenta Zig-Zag Wire inside -->
-    <path d="M 10,10 L 18,5 L 26,15 L 32,5 L 38,10" fill="none" stroke="#F90072" stroke-width="2" />
+  <!-- HIGH VOLTAGE HAZARD DECAL BLOCK (Left Side Wall) -->
+  <g transform="translate(320, 680)">
+    <rect x="-3" y="-3" width="76" height="36" rx="4" fill="#000000" />
+    <rect x="0" y="0" width="70" height="30" rx="2" fill="url(#hazard-stripes)" stroke="#000000" stroke-width="2" />
+    <!-- Caution Plate Overlay -->
+    <rect x="10" y="6" width="50" height="18" fill="#000000" rx="2" />
+    <text x="35" y="18" font-family="monospace" font-size="8" font-weight="900" fill="#FFE600" text-anchor="middle" letter-spacing="1">⚡ 1000V</text>
   </g>
 
-  <!-- CHUNKY 8-PIN IC MICROCHIP (Mounted Center Back Wall) -->
-  <g transform="translate(790, 456)">
-    <rect x="-4" y="-4" width="72" height="52" rx="10" fill="#050510" />
-    <rect x="0" y="0" width="64" height="44" rx="8" fill="#10102A" stroke="#00F0FF" stroke-width="3" />
-    <!-- Metallic Cartoon Pins -->
-    <rect x="-10" y="6" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <rect x="-10" y="19" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <rect x="-10" y="32" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <rect x="64" y="6" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <rect x="64" y="19" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <rect x="64" y="32" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-    <!-- Chip Orientation Notch & Text -->
-    <circle cx="10" cy="10" r="3" fill="#FFE600" />
-    <rect x="20" y="18" width="30" height="8" rx="2" fill="#F90072" opacity="0.8" />
+  <!-- ANGULAR OPTICAL SENSOR / VISOR LED (Top Right Wall) -->
+  <g transform="translate(1120, 180)">
+    <polygon points="-4,-4 64,-4 74,16 64,36 -4,36" fill="#000000" />
+    <polygon points="0,0 60,0 68,12 60,28 0,28" fill="#0A0A1C" stroke="#F90072" stroke-width="2" />
+    <!-- Visor Scan Lines -->
+    <line x1="10" y1="14" x2="50" y2="14" stroke="#00F0FF" stroke-width="4" filter="url(#intense-cyan-glow)" />
+    <circle cx="50" cy="14" r="3" fill="#FFFFFF" />
   </g>
 
-  <!-- BULBOUS LED DOME LIGHTS -->
-  <!-- Cyan LED Light (Top Left) -->
-  <g transform="translate(230, 290)">
-    <circle cx="0" cy="0" r="14" fill="#050510" />
-    <circle cx="0" cy="0" r="10" fill="#00F0FF" stroke="#050510" stroke-width="2" />
-    <circle cx="-3" cy="-3" r="3" fill="#FFFFFF" />
-  </g>
-  <!-- Yellow LED Light (Bottom Right) -->
-  <g transform="translate(1240, 730)">
-    <circle cx="0" cy="0" r="14" fill="#050510" />
-    <circle cx="0" cy="0" r="10" fill="#FFE600" stroke="#050510" stroke-width="2" />
-    <circle cx="-3" cy="-3" r="3" fill="#FFFFFF" />
-  </g>
-
-  <!-- JUMPER CABLE CLAMPS (Holding tangled bundles together) -->
+  <!-- DUAL RIBBON CABLE CLAMPS (Metallic Edgy Brackets) -->
   <g transform="translate(230, 480)">
-    <rect x="-4" y="-8" width="24" height="16" rx="4" fill="#050510" />
-    <rect x="-2" y="-6" width="20" height="12" rx="3" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
-  </g>
-  <g transform="translate(740, 480)">
-    <rect x="-4" y="-8" width="24" height="16" rx="4" fill="#050510" />
-    <rect x="-2" y="-6" width="20" height="12" rx="3" fill="#00F0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="-6" y="-10" width="28" height="20" rx="2" fill="#000000" />
+    <rect x="-3" y="-8" width="22" height="16" rx="1" fill="#181838" stroke="#FFE600" stroke-width="2" />
+    <line x1="8" y1="-8" x2="8" y2="8" stroke="#000000" stroke-width="2" />
   </g>
 
-  <!-- 6. CARTOON SPARKLE ACCENTS -->
-  <path d="M 680,190 L 684,200 L 694,204 L 684,208 L 680,218 L 676,208 L 666,204 L 676,200 Z" fill="#00F0FF" opacity="0.9" />
-  <path d="M 880,250 L 883,258 L 891,261 L 883,264 L 880,272 L 877,264 L 869,261 L 877,258 Z" fill="#FFE600" opacity="0.9" />
-  <path d="M 1120,500 L 1123,508 L 1131,511 L 1123,514 L 1120,522 L 1117,514 L 1109,511 L 1117,508 Z" fill="#F90072" opacity="0.9" />
+  <g transform="translate(730, 480)">
+    <rect x="-6" y="-10" width="28" height="20" rx="2" fill="#000000" />
+    <rect x="-3" y="-8" width="22" height="16" rx="1" fill="#181838" stroke="#00F0FF" stroke-width="2" />
+    <line x1="8" y1="-8" x2="8" y2="8" stroke="#000000" stroke-width="2" />
+  </g>
+
+  <!-- 5. NEW-AGE ANIME SPARKLES & VECTOR LIGHTNING -->
+  <!-- 4-Point Sharp Anime Sparkles -->
+  <g fill="#00F0FF" filter="url(#intense-cyan-glow)">
+    <path d="M 660,180 L 664,195 L 679,199 L 664,203 L 660,218 L 656,203 L 641,199 L 656,195 Z" />
+  </g>
+  <g fill="#FFE600" filter="url(#intense-yellow-glow)">
+    <path d="M 870,230 L 873,240 L 883,243 L 873,246 L 870,256 L 867,246 L 857,243 L 867,240 Z" />
+  </g>
+  <g fill="#F90072" filter="url(#intense-magenta-glow)">
+    <path d="M 1160,520 L 1163,528 L 1171,531 L 1163,534 L 1160,542 L 1157,534 L 1149,531 L 1157,528 Z" />
+  </g>
+
+  <!-- High-Tech Bus Identity Typography Overlay -->
+  <text x="270" y="180" font-family="monospace" font-size="9" fill="#00F0FF" opacity="0.6" letter-spacing="2">[SYS_BUS_A1]</text>
+  <text x="1090" y="730" font-family="monospace" font-size="9" fill="#F90072" opacity="0.6" letter-spacing="2">[PWR_GRID_02]</text>
 </svg>
