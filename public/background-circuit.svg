@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Background Gradient for 3D Room Depth -->
+    <radialGradient id="dense-room-lighting" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#181840" />
+      <stop offset="60%" stop-color="#0A0A1C" />
+      <stop offset="100%" stop-color="#030308" />
+    </radialGradient>
+
+    <!-- Heavy Cartoon Neon Glow Filters -->
+    <filter id="glow-cyan-dense" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-magenta-dense" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-yellow-dense" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-lavender-dense" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 1. DEEP NAVY CANVAS & 3D ROOM MATRIX -->
+  <rect width="1440" height="900" fill="url(#dense-room-lighting)" />
+
+  <!-- 3D Perspective Wall Corner Seams (Dashed Retro Style) -->
+  <rect x="250" y="150" width="940" height="600" fill="none" stroke="#222258" stroke-width="3" rx="16" stroke-dasharray="8 8" opacity="0.6" />
+  <line x1="0" y1="0" x2="250" y2="150" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
+  <line x1="1440" y1="0" x2="1190" y2="150" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
+  <line x1="0" y1="900" x2="250" y2="750" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
+  <line x1="1440" y1="900" x2="1190" y2="750" stroke="#28286A" stroke-width="4" stroke-linecap="round" />
+
+  <!-- 2. UNDER-LAYER CIRCUIT TRACES (Bottom Weave) -->
+
+  <!-- YELLOW BASE TRACE (Floor -> Left Wall Loop) -->
+  <g filter="url(#glow-yellow-dense)">
+    <path d="M 180,910 L 180,740 Q 180,710 210,710 L 520,710 Q 550,710 550,680 L 550,440 Q 550,410 520,410 L 340,410 Q 310,410 310,380 L 310,260 Q 310,230 340,230 L 640,230" 
+          fill="none" stroke="#050510" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 180,910 L 180,740 Q 180,710 210,710 L 520,710 Q 550,710 550,680 L 550,440 Q 550,410 520,410 L 340,410 Q 310,410 310,380 L 310,260 Q 310,230 340,230 L 640,230" 
+          fill="none" stroke="#FFE600" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="640" cy="230" r="12" fill="#050510" />
+    <circle cx="640" cy="230" r="8" fill="#FFE600" />
+    <circle cx="637" cy="227" r="2.5" fill="#FFFFFF" />
+  </g>
+
+  <!-- LAVENDER BASE TRACE (Right Wall -> Ceiling Loop) -->
+  <g filter="url(#glow-lavender-dense)">
+    <path d="M 1450,420 L 1120,420 Q 1090,420 1090,390 L 1090,200 Q 1090,170 1060,170 L 680,170 Q 650,170 650,200 L 650,310" 
+          fill="none" stroke="#050510" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 1450,420 L 1120,420 Q 1090,420 1090,390 L 1090,200 Q 1090,170 1060,170 L 680,170 Q 650,170 650,200 L 650,310" 
+          fill="none" stroke="#D7B0FF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="650" cy="310" r="11" fill="#050510" />
+    <circle cx="650" cy="310" r="7" fill="#D7B0FF" />
+    <circle cx="648" cy="308" r="2" fill="#FFFFFF" />
+  </g>
+
+  <!-- 3. MIDDLE-LAYER ACCESSORIES (Under top crossing lines) -->
+
+  <!-- CARTOON DIP SWITCH BOX (Mounted on Left Wall) -->
+  <g transform="translate(320, 692)">
+    <rect x="-3" y="-3" width="54" height="34" rx="6" fill="#050510" />
+    <rect x="0" y="0" width="48" height="28" rx="4" fill="#F90072" stroke="#050510" stroke-width="1.5" />
+    <!-- White Switches -->
+    <rect x="6" y="4" width="6" height="20" rx="2" fill="#050510" />
+    <rect x="6" y="4" width="6" height="10" rx="1" fill="#FFFFFF" />
+    <rect x="16" y="4" width="6" height="20" rx="2" fill="#050510" />
+    <rect x="16" y="14" width="6" height="10" rx="1" fill="#FFFFFF" />
+    <rect x="26" y="4" width="6" height="20" rx="2" fill="#050510" />
+    <rect x="26" y="4" width="6" height="10" rx="1" fill="#FFFFFF" />
+    <rect x="36" y="4" width="6" height="20" rx="2" fill="#050510" />
+    <rect x="36" y="14" width="6" height="10" rx="1" fill="#FFFFFF" />
+  </g>
+
+  <!-- STRIPED RESISTOR PILL #1 -->
+  <g transform="translate(410, 401)">
+    <rect x="-2" y="-2" width="40" height="20" rx="10" fill="#050510" />
+    <rect x="0" y="0" width="36" height="16" rx="8" fill="#E8D5B5" stroke="#050510" stroke-width="1.5" />
+    <rect x="6" y="0" width="4" height="16" fill="#00F0FF" />
+    <rect x="14" y="0" width="4" height="16" fill="#F90072" />
+    <rect x="22" y="0" width="4" height="16" fill="#FFE600" />
+  </g>
+
+  <!-- 4. OVER-LAYER CIRCUIT TRACES (Tangled Crossing Lines) -->
+
+  <!-- CYAN CROSSING TRACE (Tangles over Yellow & Lavender) -->
+  <g filter="url(#glow-cyan-dense)">
+    <path d="M -10,310 L 190,310 Q 220,310 220,340 L 220,520 Q 220,550 250,550 L 440,550 Q 470,550 470,520 L 470,300 Q 470,270 500,270 L 820,270 Q 850,270 850,300 L 850,480" 
+          fill="none" stroke="#050510" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M -10,310 L 190,310 Q 220,310 220,340 L 220,520 Q 220,550 250,550 L 440,550 Q 470,550 470,520 L 470,300 Q 470,270 500,270 L 820,270 Q 850,270 850,300 L 850,480" 
+          fill="none" stroke="#00F0FF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="850" cy="480" r="14" fill="#050510" />
+    <circle cx="850" cy="480" r="10" fill="#00F0FF" />
+    <circle cx="847" cy="477" r="3" fill="#FFFFFF" />
+  </g>
+
+  <!-- MAGENTA CROSSING TRACE (Drops Top Ceiling -> Crosses Cyan & Yellow) -->
+  <g filter="url(#glow-magenta-dense)">
+    <path d="M 420,-10 L 420,140 Q 420,170 390,170 L 270,170 Q 240,170 240,200 L 240,460 Q 240,490 270,490 L 720,490 Q 750,490 750,520 L 750,660 Q 750,690 780,690 L 980,690" 
+          fill="none" stroke="#050510" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 420,-10 L 420,140 Q 420,170 390,170 L 270,170 Q 240,170 240,200 L 240,460 Q 240,490 270,490 L 720,490 Q 750,490 750,520 L 750,660 Q 750,690 780,690 L 980,690" 
+          fill="none" stroke="#F90072" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="980" cy="690" r="14" fill="#050510" />
+    <circle cx="980" cy="690" r="10" fill="#F90072" />
+    <circle cx="977" cy="687" r="3" fill="#FFFFFF" />
+  </g>
+
+  <!-- SECONDARY TANGLED CYAN & MAGENTA LOOP (Back Wall Right) -->
+  <g filter="url(#glow-yellow-dense)">
+    <path d="M 1280,910 L 1280,780 Q 1280,750 1250,750 L 920,750 Q 890,750 890,720 L 890,580 Q 890,550 920,550 L 1160,550 Q 1190,550 1190,520 L 1190,320 Q 1190,290 1160,290 L 960,290" 
+          fill="none" stroke="#050510" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 1280,910 L 1280,780 Q 1280,750 1250,750 L 920,750 Q 890,750 890,720 L 890,580 Q 890,550 920,550 L 1160,550 Q 1190,550 1190,520 L 1190,320 Q 1190,290 1160,290 L 960,290" 
+          fill="none" stroke="#FFE600" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="960" cy="290" r="12" fill="#050510" />
+    <circle cx="960" cy="290" r="8" fill="#FFE600" />
+    <circle cx="958" cy="288" r="2.5" fill="#FFFFFF" />
+  </g>
+
+  <!-- 5. TOP-LAYER HARDWARE ACCESSORIES -->
+
+  <!-- RETRO VACUUM TUBE (Glowing Tube on Right Wall) -->
+  <g transform="translate(1160, 380)">
+    <!-- Black Outer Border -->
+    <rect x="-4" y="-4" width="44" height="74" rx="18" fill="#050510" />
+    <!-- Glass Bulb Outer Body -->
+    <rect x="0" y="0" width="36" height="66" rx="16" fill="#121230" stroke="#FFE600" stroke-width="2.5" opacity="0.9" />
+    <!-- Inner Glowing Filament Coils -->
+    <path d="M 12,50 L 12,24 L 18,14 L 24,24 L 24,50" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" />
+    <circle cx="18" cy="14" r="4" fill="#F90072" />
+    <!-- Metallic Socket Base -->
+    <rect x="-2" y="52" width="40" height="14" rx="4" fill="#050510" stroke="#D7B0FF" stroke-width="2" />
+    <!-- Glass Highlight Reflection -->
+    <path d="M 6,10 Q 6,30 10,48" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+  </g>
+
+  <!-- GLASS FILAMENT FUSE (Mounted on Top Center Ceiling) -->
+  <g transform="translate(720, 158)">
+    <rect x="-2" y="-2" width="52" height="24" rx="6" fill="#050510" />
+    <!-- Clear Glass Tube -->
+    <rect x="0" y="0" width="48" height="20" rx="4" fill="#0A0A1C" stroke="#00F0FF" stroke-width="1.5" />
+    <!-- Metallic End Caps -->
+    <rect x="0" y="0" width="10" height="20" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="38" y="0" width="10" height="20" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <!-- Glowing Magenta Zig-Zag Wire inside -->
+    <path d="M 10,10 L 18,5 L 26,15 L 32,5 L 38,10" fill="none" stroke="#F90072" stroke-width="2" />
+  </g>
+
+  <!-- CHUNKY 8-PIN IC MICROCHIP (Mounted Center Back Wall) -->
+  <g transform="translate(790, 456)">
+    <rect x="-4" y="-4" width="72" height="52" rx="10" fill="#050510" />
+    <rect x="0" y="0" width="64" height="44" rx="8" fill="#10102A" stroke="#00F0FF" stroke-width="3" />
+    <!-- Metallic Cartoon Pins -->
+    <rect x="-10" y="6" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="-10" y="19" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="-10" y="32" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="64" y="6" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="64" y="19" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <rect x="64" y="32" width="10" height="6" rx="2" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+    <!-- Chip Orientation Notch & Text -->
+    <circle cx="10" cy="10" r="3" fill="#FFE600" />
+    <rect x="20" y="18" width="30" height="8" rx="2" fill="#F90072" opacity="0.8" />
+  </g>
+
+  <!-- BULBOUS LED DOME LIGHTS -->
+  <!-- Cyan LED Light (Top Left) -->
+  <g transform="translate(230, 290)">
+    <circle cx="0" cy="0" r="14" fill="#050510" />
+    <circle cx="0" cy="0" r="10" fill="#00F0FF" stroke="#050510" stroke-width="2" />
+    <circle cx="-3" cy="-3" r="3" fill="#FFFFFF" />
+  </g>
+  <!-- Yellow LED Light (Bottom Right) -->
+  <g transform="translate(1240, 730)">
+    <circle cx="0" cy="0" r="14" fill="#050510" />
+    <circle cx="0" cy="0" r="10" fill="#FFE600" stroke="#050510" stroke-width="2" />
+    <circle cx="-3" cy="-3" r="3" fill="#FFFFFF" />
+  </g>
+
+  <!-- JUMPER CABLE CLAMPS (Holding tangled bundles together) -->
+  <g transform="translate(230, 480)">
+    <rect x="-4" y="-8" width="24" height="16" rx="4" fill="#050510" />
+    <rect x="-2" y="-6" width="20" height="12" rx="3" fill="#D7B0FF" stroke="#050510" stroke-width="1.5" />
+  </g>
+  <g transform="translate(740, 480)">
+    <rect x="-4" y="-8" width="24" height="16" rx="4" fill="#050510" />
+    <rect x="-2" y="-6" width="20" height="12" rx="3" fill="#00F0FF" stroke="#050510" stroke-width="1.5" />
+  </g>
+
+  <!-- 6. CARTOON SPARKLE ACCENTS -->
+  <path d="M 680,190 L 684,200 L 694,204 L 684,208 L 680,218 L 676,208 L 666,204 L 676,200 Z" fill="#00F0FF" opacity="0.9" />
+  <path d="M 880,250 L 883,258 L 891,261 L 883,264 L 880,272 L 877,264 L 869,261 L 877,258 Z" fill="#FFE600" opacity="0.9" />
+  <path d="M 1120,500 L 1123,508 L 1131,511 L 1123,514 L 1120,522 L 1117,514 L 1109,511 L 1117,508 Z" fill="#F90072" opacity="0.9" />
+</svg>

@@ -757,17 +757,9 @@ export default function App() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[400px] bg-brand-brown/[0.12] blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute top-24 left-1/4 w-[280px] h-[280px] bg-brand-purple/[0.03] blur-[100px] rounded-full pointer-events-none" />
 
-      {/* Savestate Theme Background Vectors (Circuitry Ws) */}
-      <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
-        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          {/* Left Side Ws */}
-          <path d="M 10,120 L 10,80 L 20,60 L 10,40 L 20,20 L 10,0 L 10,-20" stroke="var(--color-brand-purple)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-purple)]" />
-          <path d="M 15,120 L 15,85 L 25,65 L 15,45 L 25,25 L 15,5 L 15,-20" stroke="var(--color-brand-teal)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-teal)]" />
-          
-          {/* Right Side Ws */}
-          <path d="M 90,120 L 90,80 L 80,60 L 90,40 L 80,20 L 90,0 L 90,-20" stroke="var(--color-brand-magenta)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-magenta)]" />
-          <path d="M 85,120 L 85,85 L 75,65 L 85,45 L 75,25 L 85,5 L 85,-20" stroke="var(--color-brand-yellow)" strokeWidth="0.3" fill="none" className="drop-shadow-[0_0_5px_var(--color-brand-yellow)]" />
-        </svg>
+      {/* Savestate Theme Background (Circuit Room Artwork) */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-45">
+        <img src="/background-circuit.svg" alt="" className="w-full h-full object-cover" />
       </div>
 
       {/* Main Container */}
@@ -807,7 +799,7 @@ export default function App() {
                     <button onClick={() => { setCurrentPage('home'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'home' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <BookOpen size={14} /> Home
                     </button>
-                    <button onClick={() => { setViewingProfileId(session?.user?.id || 'u1'); setCurrentPage('profile'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'profile' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
+                    <button onClick={() => { if (session?.user?.id) setViewingProfileId(session.user.id); setCurrentPage('profile'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'profile' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
                       <User size={14} /> My Profile
                     </button>
                     <button onClick={() => { setCurrentPage('community'); setIsNavMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 hover:bg-brand-purple/10 ${currentPage === 'community' ? 'text-brand-purple bg-brand-purple/5' : 'text-[var(--color-text-main)] hover:text-[var(--color-text-main)]'}`}>
@@ -868,8 +860,11 @@ export default function App() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />
                   <div className="absolute right-0 top-full mt-2 w-52 bg-app-card border border-brand-purple/30 rounded-xl shadow-2xl overflow-hidden z-50">
-                    <button onClick={() => { setViewingProfileId(session?.user?.id || 'u1'); setCurrentPage('profile'); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold flex items-center gap-3 hover:bg-brand-purple/10 text-white">
+                    <button onClick={() => { if (session?.user?.id) { setViewingProfileId(session.user.id); setCurrentPage('profile'); } setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold flex items-center gap-3 hover:bg-brand-purple/10 text-white">
                       <User size={16} className="text-brand-purple" /> My Profile
+                    </button>
+                    <button onClick={() => { setCurrentPage('community'); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold flex items-center gap-3 hover:bg-brand-purple/10 text-white border-t border-app-border/50">
+                      <Users size={16} className="text-brand-teal" /> Community
                     </button>
                     <button onClick={() => { setIsProfileDrawerOpen(true); setIsUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold flex items-center gap-3 hover:bg-brand-purple/10 text-white border-t border-app-border/50">
                       <Settings size={16} className="text-[var(--color-text-muted)]" /> Settings & Account
